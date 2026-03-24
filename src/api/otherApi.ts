@@ -1,0 +1,58 @@
+import api from './axiosInstance';
+import type {
+  TopicRequest,
+  CreateTopicRequestData,
+  Notification,
+  TrendItem,
+  SupervisorStats,
+  ScoreDistribution,
+  DashboardData,
+} from '../types';
+
+export const topicRequestsApi = {
+  create: (data: CreateTopicRequestData) =>
+    api.post<TopicRequest>('/topic-requests', data).then((r) => r.data),
+
+  getMy: () =>
+    api.get<TopicRequest[]>('/topic-requests/my').then((r) => r.data),
+
+  getInbox: () =>
+    api.get<TopicRequest[]>('/topic-requests/inbox').then((r) => r.data),
+
+  approve: (id: string) =>
+    api.patch<TopicRequest>(`/topic-requests/${id}/approve`).then((r) => r.data),
+
+  reject: (id: string) =>
+    api.patch<TopicRequest>(`/topic-requests/${id}/reject`).then((r) => r.data),
+};
+
+export const notificationsApi = {
+  getAll: () =>
+    api.get<Notification[]>('/notifications').then((r) => r.data),
+
+  getUnreadCount: () =>
+    api.get<{ count: number }>('/notifications/unread-count').then((r) => r.data),
+
+  markAsRead: (id: string) =>
+    api.patch<Notification>(`/notifications/${id}/read`).then((r) => r.data),
+
+  markAllAsRead: () =>
+    api.patch<{ message: string }>('/notifications/read-all').then((r) => r.data),
+};
+
+export const analyticsApi = {
+  getTrends: () =>
+    api.get<TrendItem[]>('/analytics/trends').then((r) => r.data),
+
+  getSupervisorStats: () =>
+    api.get<SupervisorStats[]>('/analytics/supervisors').then((r) => r.data),
+
+  getScoreDistribution: () =>
+    api.get<ScoreDistribution[]>('/analytics/scores').then((r) => r.data),
+
+  getPopularCategories: () =>
+    api.get<{ category: string; count: number }[]>('/analytics/categories').then((r) => r.data),
+
+  getDashboard: () =>
+    api.get<DashboardData>('/analytics/dashboard').then((r) => r.data),
+};
