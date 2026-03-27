@@ -10,8 +10,13 @@ import { HomePage } from './pages/Home/HomePage';
 import { LoginPage } from './pages/Auth/LoginPage';
 import { RegisterPage } from './pages/Auth/RegisterPage';
 import { CatalogPage } from './pages/Catalog/CatalogPage';
+import { WorkDetailPage } from './pages/Catalog/WorkDetailPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
+import { CreateWorkPage } from './pages/Dashboard/CreateWorkPage';
+import { ProfilePage } from './pages/Dashboard/ProfilePage';
 import { SupervisorsPage } from './pages/Supervisors/SupervisorsPage';
+import { AnalyticsPage } from './pages/Analytics/AnalyticsPage';
+import { AdminPage } from './pages/Admin/AdminPage';
 
 function App(): ReactNode {
   return (
@@ -24,6 +29,7 @@ function App(): ReactNode {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/catalog/:id" element={<WorkDetailPage />} />
             <Route path="/supervisors" element={<SupervisorsPage />} />
 
             {/* Protected routes */}
@@ -32,6 +38,22 @@ function App(): ReactNode {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/works/new"
+              element={
+                <ProtectedRoute>
+                  <CreateWorkPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />
@@ -49,27 +71,25 @@ function App(): ReactNode {
               path="/analytics"
               element={
                 <ProtectedRoute roles={[Role.SUPERVISOR, Role.ADMIN]}>
-                  <div style={{ padding: '2rem', color: '#e2e8f0' }}>
-                    <h1>Аналитика</h1>
-                    <p style={{ color: '#64748b', marginTop: '1rem' }}>
-                      Дашборд аналитики (подключить Recharts)
-                    </p>
-                  </div>
+                  <AnalyticsPage />
                 </ProtectedRoute>
               }
             />
 
             {/* Admin — admin only */}
             <Route
+              path="/admin"
+              element={
+                <ProtectedRoute roles={[Role.ADMIN]}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/admin/*"
               element={
                 <ProtectedRoute roles={[Role.ADMIN]}>
-                  <div style={{ padding: '2rem', color: '#e2e8f0' }}>
-                    <h1>Панель администратора</h1>
-                    <p style={{ color: '#64748b', marginTop: '1rem' }}>
-                      Управление пользователями и настройками
-                    </p>
-                  </div>
+                  <AdminPage />
                 </ProtectedRoute>
               }
             />
