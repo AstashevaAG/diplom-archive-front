@@ -1,7 +1,16 @@
 import { useState, useEffect, type ReactNode } from 'react';
 import { usersApi } from '../../api';
 import type { User } from '../../types';
-import styles from '../Catalog/Catalog.module.css';
+import styles from './Supervisors.module.css';
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase();
+}
 
 export function SupervisorsPage(): ReactNode {
   const [supervisors, setSupervisors] = useState<User[]>([]);
@@ -21,6 +30,7 @@ export function SupervisorsPage(): ReactNode {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Научные руководители</h1>
+        <p className={styles.subtitle}>Преподаватели кафедры психологии</p>
       </div>
 
       {isLoading ? (
@@ -31,18 +41,27 @@ export function SupervisorsPage(): ReactNode {
         <div className={styles.grid}>
           {supervisors.map((sup) => (
             <div className={styles.card} key={sup.id}>
-              <div className={styles.cardTitle}>{sup.fullName}</div>
-              {sup.specialization && (
-                <div className={styles.cardAnnotation}>
-                  Специализация: {sup.specialization}
+              <div className={styles.cardHeader}>
+                <div className={styles.avatar}>
+                  {getInitials(sup.fullName)}
                 </div>
-              )}
-              {sup.bio && (
-                <div className={styles.cardAnnotation}>{sup.bio}</div>
-              )}
-              <div className={styles.cardMeta}>
-                <span>📧 {sup.email}</span>
+                <div>
+                  <div className={styles.cardName}>{sup.fullName}</div>
+                  {sup.specialization && (
+                    <div className={styles.cardSpec}>{sup.specialization}</div>
+                  )}
+                </div>
               </div>
+              {sup.bio && (
+                <div className={styles.cardBio}>{sup.bio}</div>
+              )}
+              <span className={styles.cardEmail}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect width="20" height="16" x="2" y="4" rx="2" />
+                  <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                {sup.email}
+              </span>
             </div>
           ))}
         </div>
