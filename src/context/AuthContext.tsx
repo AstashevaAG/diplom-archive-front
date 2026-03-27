@@ -48,19 +48,17 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
     void loadUser();
   }, [loadUser]);
 
-  const handleAuthResponse = useCallback((response: AuthResponse): void => {
+  const handleAuthResponse = useCallback(async (response: AuthResponse): Promise<void> => {
     localStorage.setItem('accessToken', response.tokens.accessToken);
     localStorage.setItem('refreshToken', response.tokens.refreshToken);
-    // Load the full user profile
-    void usersApi.getMe().then((userData) => {
-      setUser(userData);
-    });
+    const userData = await usersApi.getMe();
+    setUser(userData);
   }, []);
 
   const login = useCallback(
     async (data: LoginData): Promise<void> => {
       const response = await authApi.login(data);
-      handleAuthResponse(response);
+      await handleAuthResponse(response);
     },
     [handleAuthResponse],
   );
@@ -68,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
   const register = useCallback(
     async (data: RegisterData): Promise<void> => {
       const response = await authApi.register(data);
-      handleAuthResponse(response);
+      await handleAuthResponse(response);
     },
     [handleAuthResponse],
   );
