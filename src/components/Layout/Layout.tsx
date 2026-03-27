@@ -25,7 +25,12 @@ export function Layout({ children }: LayoutProps): ReactNode {
     <div className={styles.layout}>
       <header className={styles.header}>
         <Link to="/" className={styles.logo}>
-          <span className={styles.logoIcon}>🎓</span>
+          <span className={styles.logoIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5" />
+            </svg>
+          </span>
           Архив ВКР
         </Link>
 
@@ -51,7 +56,7 @@ export function Layout({ children }: LayoutProps): ReactNode {
 
           {hasRole(Role.ADMIN) && (
             <NavLink to="/admin" className={getNavLinkClass}>
-              Админ
+              Управление
             </NavLink>
           )}
         </nav>
@@ -59,7 +64,7 @@ export function Layout({ children }: LayoutProps): ReactNode {
         <div className={styles.headerActions}>
           {isAuthenticated && user ? (
             <div className={styles.userInfo}>
-              <div>
+              <div className={styles.userMeta}>
                 <div className={styles.userName}>{user.fullName}</div>
                 <div className={styles.userRole}>
                   {ROLE_LABELS[user.role] ?? user.role}
@@ -91,6 +96,18 @@ export function Layout({ children }: LayoutProps): ReactNode {
       </header>
 
       <main className={styles.main}>{children}</main>
+
+      <footer className={styles.footer}>
+        <div className={styles.footerInner}>
+          <span className={styles.footerText}>
+            © {String(new Date().getFullYear())} Университет практической психологии
+          </span>
+          <div className={styles.footerLinks}>
+            <Link to="/catalog" className={styles.footerLink}>Каталог</Link>
+            <Link to="/supervisors" className={styles.footerLink}>Руководители</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
