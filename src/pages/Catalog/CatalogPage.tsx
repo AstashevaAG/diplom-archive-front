@@ -106,7 +106,12 @@ export function CatalogPage(): ReactNode {
 
       <div className={styles.searchSection}>
         <div className={styles.searchBar}>
-          <span className={styles.searchIcon}>🔍</span>
+          <span className={styles.searchIcon}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </span>
           <input
             type="text"
             className={styles.searchInput}
@@ -156,9 +161,9 @@ export function CatalogPage(): ReactNode {
                   />
                 )}
                 <div className={styles.cardMeta}>
-                  <span>👤 {result.authorName}</span>
-                  {result.supervisorName && <span>📋 {result.supervisorName}</span>}
-                  {result.year && <span>📅 {String(result.year)}</span>}
+                  <span>{result.authorName}</span>
+                  {result.supervisorName && <span>{result.supervisorName}</span>}
+                  {result.year && <span>{String(result.year)}</span>}
                   {result.qualityScore !== null && (
                     <span className={getScoreClass(result.qualityScore)}>
                       {String(result.qualityScore)}%
@@ -188,9 +193,9 @@ export function CatalogPage(): ReactNode {
                   <div className={styles.cardAnnotation}>{work.annotation}</div>
                 )}
                 <div className={styles.cardMeta}>
-                  <span>👤 {work.author.fullName}</span>
-                  {work.supervisor && <span>📋 {work.supervisor.fullName}</span>}
-                  {work.year && <span>📅 {String(work.year)}</span>}
+                  <span>{work.author.fullName}</span>
+                  {work.supervisor && <span>{work.supervisor.fullName}</span>}
+                  {work.year && <span>{String(work.year)}</span>}
                   <span className={styles.badge}>
                     {WORK_STATUS_LABELS[work.status] ?? work.status}
                   </span>
