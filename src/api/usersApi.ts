@@ -1,5 +1,5 @@
 import api from './axiosInstance';
-import type { User, Role } from '../types';
+import type { User, Role, StudentPortfolioItem, Work } from '../types';
 
 export const usersApi = {
   getMe: () =>
@@ -22,4 +22,10 @@ export const usersApi = {
 
   blockUser: (id: string, block: boolean) =>
     api.patch<User>(`/users/${id}/block`, { block }).then((r) => r.data),
+
+  getPortfolio: (userId: string) =>
+    api.get<StudentPortfolioItem[]>(`/users/${userId}/portfolio`).then((r) => r.data),
+
+  getSupervisorWorks: (userId: string) =>
+    api.get<Work[]>(`/users/${userId}/works`).then((r) => r.data),
 };

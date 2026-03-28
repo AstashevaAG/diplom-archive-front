@@ -6,6 +6,7 @@ import type {
   WorkQueryParams,
   WorkStatus,
   PaginatedResponse,
+  WorkMessage,
 } from '../types';
 
 export const worksApi = {
@@ -35,4 +36,10 @@ export const worksApi = {
 
   delete: (id: string) =>
     api.delete(`/works/${id}`).then((r) => r.data),
+
+  getMessages: (workId: string) =>
+    api.get<WorkMessage[]>(`/works/${workId}/messages`).then((r) => r.data),
+
+  sendMessage: (workId: string, text: string) =>
+    api.post<WorkMessage>(`/works/${workId}/messages`, { text }).then((r) => r.data),
 };

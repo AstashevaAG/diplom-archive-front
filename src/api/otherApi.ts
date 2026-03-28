@@ -7,6 +7,7 @@ import type {
   SupervisorStats,
   ScoreDistribution,
   DashboardData,
+  WorkStage,
 } from '../types';
 
 export const topicRequestsApi = {
@@ -22,8 +23,8 @@ export const topicRequestsApi = {
   approve: (id: string) =>
     api.patch<TopicRequest>(`/topic-requests/${id}/approve`).then((r) => r.data),
 
-  reject: (id: string) =>
-    api.patch<TopicRequest>(`/topic-requests/${id}/reject`).then((r) => r.data),
+  reject: (id: string, rejectReason?: string) =>
+    api.patch<TopicRequest>(`/topic-requests/${id}/reject`, { rejectReason }).then((r) => r.data),
 };
 
 export const notificationsApi = {
@@ -38,6 +39,20 @@ export const notificationsApi = {
 
   markAllAsRead: () =>
     api.patch<{ message: string }>('/notifications/read-all').then((r) => r.data),
+};
+
+export const stagesApi = {
+  getStages: (workId: string) =>
+    api.get<WorkStage[]>(`/works/${workId}/stages`).then((r) => r.data),
+
+  getByWork: (workId: string) =>
+    api.get<WorkStage[]>(`/works/${workId}/stages`).then((r) => r.data),
+
+  updateStage: (workId: string, stageId: string, isCompleted: boolean) =>
+    api.patch<WorkStage>(`/works/${workId}/stages/${stageId}`, { isCompleted }).then((r) => r.data),
+
+  update: (workId: string, stageId: string, data: { isCompleted?: boolean }) =>
+    api.patch<WorkStage>(`/works/${workId}/stages/${stageId}`, data).then((r) => r.data),
 };
 
 export const analyticsApi = {
