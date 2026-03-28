@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { searchApi, worksApi } from '../../api';
 import { useDebounce } from '../../hooks';
 import { WORK_STATUS_LABELS } from '../../utils/constants';
-import type { Work, SearchResult, SuggestResult, PaginatedResponse } from '../../types';
+import { SortBy, StatusFilter, type Work, type SearchResult, type SuggestResult, type SearchResponse } from '../../types';
 import styles from './Catalog.module.css';
 
 function getScoreClass(score: number | null): string {
@@ -18,26 +18,39 @@ export function CatalogPage(): ReactNode {
   const [suggestions, setSuggestions] = useState<SuggestResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [works, setWorks] = useState<Work[]>([]);
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchResponse, setSearchResponse] = useState<SearchResponse | null>(null);
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Filters
+  const [sortBy, setSortBy] = useState<SortBy>(SortBy.NEWEST);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(StatusFilter.PUBLISHED);
+  const [minScore, setMinScore] = useState('');
 
   const debouncedQuery = useDebounce(query, 300);
 
   const loadWorks = useCallback(async (pageNum: number): Promise<void> => {
     setIsLoading(true);
     try {
-      const result: PaginatedResponse<Work> = await worksApi.getAll({ page: pageNum, limit: 12 });
+      const result = await worksApi.getAll({
+        page: pageNum,
+        limit: 12,
+        sortBy,
+        statusFilter,
+        minScore: minScore ? parseFloat(minScore) : undefined,
+      });
       setWorks(result.data);
       setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {
       // silently fail
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [sortBy, statusFilter, minScore]);
 
   useEffect(() => {
     if (!isSearchMode) {
@@ -45,13 +58,17 @@ export function CatalogPage(): ReactNode {
     }
   }, [page, isSearchMode, loadWorks]);
 
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [sortBy, statusFilter, minScore]);
+
   // Autocomplete suggestions
   useEffect(() => {
     if (debouncedQuery.length < 2) {
       setSuggestions([]);
       return;
     }
-
     void searchApi.suggest(debouncedQuery).then(setSuggestions).catch(() => {
       setSuggestions([]);
     });
@@ -62,17 +79,16 @@ export function CatalogPage(): ReactNode {
       setIsSearchMode(false);
       return;
     }
-
     setIsLoading(true);
     setIsSearchMode(true);
     setShowSuggestions(false);
-
     try {
       const result = await searchApi.search({ q: query, page: 1, limit: 12 });
-      setSearchResults(result.data);
+      setSearchResponse(result);
       setTotalPages(result.totalPages);
+      setTotal(result.total);
     } catch {
-      setSearchResults([]);
+      setSearchResponse(null);
     } finally {
       setIsLoading(false);
     }
@@ -86,15 +102,18 @@ export function CatalogPage(): ReactNode {
       setIsSearchMode(true);
       try {
         const result = await searchApi.search({ q: title, page: 1, limit: 12 });
-        setSearchResults(result.data);
+        setSearchResponse(result);
         setTotalPages(result.totalPages);
+        setTotal(result.total);
       } catch {
-        setSearchResults([]);
+        setSearchResponse(null);
       } finally {
         setIsLoading(false);
       }
     })();
   };
+
+  const searchResults: SearchResult[] = searchResponse?.data ?? [];
 
   return (
     <div className={styles.page}>
@@ -115,11 +134,12 @@ export function CatalogPage(): ReactNode {
           <input
             type="text"
             className={styles.searchInput}
-            placeholder="Поиск по работам, темам, содержимому PDF..."
+            placeholder="Поиск по темам, содержимому, аннотациям... (поддерживается неправильная раскладка)"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value);
               setShowSuggestions(true);
+              if (!e.target.value.trim()) setIsSearchMode(false);
             }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') void handleSearch();
@@ -127,7 +147,6 @@ export function CatalogPage(): ReactNode {
             onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
           />
-
           {showSuggestions && suggestions.length > 0 && (
             <div className={styles.suggestions}>
               {suggestions.map((s) => (
@@ -144,76 +163,156 @@ export function CatalogPage(): ReactNode {
         </div>
       </div>
 
+      {!isSearchMode && (
+        <div className={styles.filtersBar}>
+          <select
+            className={styles.filterSelect}
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortBy)}
+          >
+            <option value={SortBy.NEWEST}>Сначала новые</option>
+            <option value={SortBy.OLDEST}>Сначала старые</option>
+            <option value={SortBy.SCORE_DESC}>По оценке ↓</option>
+            <option value={SortBy.SCORE_ASC}>По оценке ↑</option>
+          </select>
+
+          <select
+            className={styles.filterSelect}
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          >
+            <option value={StatusFilter.PUBLISHED}>Завершённые</option>
+            <option value={StatusFilter.IN_PROGRESS}>В процессе</option>
+            <option value={StatusFilter.ALL}>Все</option>
+          </select>
+
+          <input
+            type="number"
+            className={styles.filterSelect}
+            placeholder="Мин. оценка %"
+            min={0}
+            max={100}
+            value={minScore}
+            onChange={(e) => setMinScore(e.target.value)}
+            style={{ width: '130px' }}
+          />
+
+          {!isLoading && (
+            <span className={styles.filterCount}>
+              {total} {total === 1 ? 'работа' : total < 5 ? 'работы' : 'работ'}
+            </span>
+          )}
+        </div>
+      )}
+
+      {isSearchMode && searchResponse?.convertedQuery && (
+        <div className={styles.convertedHint}>
+          Поиск также выполнен по варианту: «{searchResponse.convertedQuery}»
+        </div>
+      )}
+
       {isLoading ? (
         <div className={styles.empty}>Загрузка...</div>
       ) : isSearchMode ? (
         searchResults.length === 0 ? (
           <div className={styles.empty}>По вашему запросу ничего не найдено</div>
         ) : (
-          <div className={styles.grid}>
-            {searchResults.map((result) => (
-              <Link to={`/catalog/${result.id}`} className={styles.card} key={result.id}>
-                <div className={styles.cardTitle}>{result.title}</div>
-                {result.headline && (
-                  <div
-                    className={styles.cardAnnotation}
-                    dangerouslySetInnerHTML={{ __html: result.headline }}
-                  />
-                )}
-                <div className={styles.cardMeta}>
-                  <span>{result.authorName}</span>
-                  {result.supervisorName && <span>{result.supervisorName}</span>}
-                  {result.year && <span>{String(result.year)}</span>}
-                  {result.qualityScore !== null && (
-                    <span className={getScoreClass(result.qualityScore)}>
-                      {String(result.qualityScore)}%
-                    </span>
+          <>
+            <div className={styles.filterCount} style={{ marginBottom: '0.75rem' }}>
+              Найдено: {total}
+            </div>
+            <div className={styles.grid}>
+              {searchResults.map((result) => (
+                <Link to={`/catalog/${result.id}`} className={styles.card} key={result.id}>
+                  <div className={styles.cardTitle}>{result.title}</div>
+                  {result.headline && (
+                    <div
+                      className={styles.cardAnnotation}
+                      dangerouslySetInnerHTML={{ __html: result.headline }}
+                    />
                   )}
-                </div>
-                {result.tags.length > 0 && (
-                  <div className={styles.tags}>
-                    {result.tags.slice(0, 3).map((tag) => (
-                      <span key={tag} className={styles.tag}>{tag}</span>
-                    ))}
+                  <div className={styles.cardMeta}>
+                    <span>{result.authorName}</span>
+                    {result.supervisorName && <span>{result.supervisorName}</span>}
+                    {result.year && <span>{String(result.year)}</span>}
+                    {result.qualityScore !== null && (
+                      <span className={getScoreClass(result.qualityScore)}>
+                        {String(result.qualityScore)}%
+                      </span>
+                    )}
                   </div>
-                )}
-              </Link>
-            ))}
-          </div>
+                  {(result.tags?.length ?? 0) > 0 && (
+                    <div className={styles.tags}>
+                      {result.tags.slice(0, 3).map((tag) => (
+                        <span key={tag} className={styles.tag}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </Link>
+              ))}
+            </div>
+          </>
         )
       ) : works.length === 0 ? (
         <div className={styles.empty}>Работы пока не добавлены</div>
       ) : (
         <>
           <div className={styles.grid}>
-            {works.map((work) => (
-              <Link to={`/catalog/${work.id}`} className={styles.card} key={work.id}>
-                <div className={styles.cardTitle}>{work.title}</div>
-                {work.annotation && (
-                  <div className={styles.cardAnnotation}>{work.annotation}</div>
-                )}
-                <div className={styles.cardMeta}>
-                  <span>{work.author.fullName}</span>
-                  {work.supervisor && <span>{work.supervisor.fullName}</span>}
-                  {work.year && <span>{String(work.year)}</span>}
-                  <span className={styles.badge}>
-                    {WORK_STATUS_LABELS[work.status] ?? work.status}
-                  </span>
-                  {work.qualityScore !== null && (
-                    <span className={getScoreClass(work.qualityScore)}>
-                      {String(work.qualityScore)}%
-                    </span>
-                  )}
-                </div>
-                {work.tags.length > 0 && (
-                  <div className={styles.tags}>
-                    {work.tags.slice(0, 4).map((tag) => (
-                      <span key={tag} className={styles.tag}>{tag}</span>
-                    ))}
+            {works.map((work) => {
+              const isInProgress = statusFilter === StatusFilter.IN_PROGRESS;
+              if (isInProgress) {
+                return (
+                  <div key={work.id} className={`${styles.card} ${styles.inProgressCard}`}>
+                    <div className={styles.cardTitle}>{work.title}</div>
+                    {work.annotation && (
+                      <div className={styles.cardAnnotation}>{work.annotation}</div>
+                    )}
+                    <div className={styles.cardMeta}>
+                      <span>{work.author.fullName}</span>
+                      {work.supervisor && <span>{work.supervisor.fullName}</span>}
+                      <span className={styles.inProgressBadge}>
+                        {WORK_STATUS_LABELS[work.status] ?? work.status}
+                      </span>
+                    </div>
+                    {(work.tags?.length ?? 0) > 0 && (
+                      <div className={styles.tags}>
+                        {work.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className={styles.tag}>{tag}</span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </Link>
-            ))}
+                );
+              }
+              return (
+                <Link to={`/catalog/${work.id}`} className={styles.card} key={work.id}>
+                  <div className={styles.cardTitle}>{work.title}</div>
+                  {work.annotation && (
+                    <div className={styles.cardAnnotation}>{work.annotation}</div>
+                  )}
+                  <div className={styles.cardMeta}>
+                    <span>{work.author.fullName}</span>
+                    {work.supervisor && <span>{work.supervisor.fullName}</span>}
+                    {work.year && <span>{String(work.year)}</span>}
+                    <span className={styles.badge}>
+                      {WORK_STATUS_LABELS[work.status] ?? work.status}
+                    </span>
+                    {work.qualityScore !== null && (
+                      <span className={getScoreClass(work.qualityScore)}>
+                        {String(work.qualityScore)}%
+                      </span>
+                    )}
+                  </div>
+                  {(work.tags?.length ?? 0) > 0 && (
+                    <div className={styles.tags}>
+                      {work.tags.slice(0, 4).map((tag) => (
+                        <span key={tag} className={styles.tag}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {totalPages > 1 && (
