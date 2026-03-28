@@ -1,0 +1,375 @@
+.page {
+  max-width: var(--content-max-width);
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.empty {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+/* ===== Search ===== */
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-subtle);
+  display: flex;
+  pointer-events: none;
+}
+
+.searchIcon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.searchInput {
+  flex: 1;
+  padding: 0.625rem 1rem 0.625rem 2.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput:focus {
+  border-color: var(--accent);
+}
+
+.searchBtn {
+  padding: 0.625rem 1.25rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.searchBtn:hover {
+  background: var(--accent-hover);
+}
+
+/* ===== Posts ===== */
+.posts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.postCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.postCard:hover {
+  border-color: var(--border-hover);
+}
+
+.postCardPinned {
+  border-color: var(--accent);
+  border-left: 3px solid var(--accent);
+}
+
+.pinnedBadge {
+  padding: 0.25rem 1rem;
+  background: var(--accent-muted);
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.postHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.125rem 1.25rem;
+  cursor: pointer;
+  gap: 1rem;
+}
+
+.postHeader:hover .postTitle {
+  color: var(--accent);
+}
+
+.postHeaderLeft {
+  flex: 1;
+}
+
+.postTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.375rem;
+  transition: color var(--transition-fast);
+  line-height: 1.4;
+}
+
+.postMeta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.postAuthor {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.authorAvatar {
+  width: 22px;
+  height: 22px;
+  background: var(--accent-muted);
+  border-radius: 50%;
+  color: var(--accent);
+  font-size: 0.625rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.postDate {
+  font-size: 0.75rem;
+  color: var(--text-subtle);
+}
+
+.postChevron {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* ===== Post Content ===== */
+.postContent {
+  padding: 0 1.25rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.postBody {
+  padding-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.postTags {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.postTag {
+  padding: 0.125rem 0.5rem;
+  background: var(--bg-hover);
+  color: var(--text-muted);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+}
+
+.postActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.btnEdit {
+  padding: 0.375rem 0.875rem;
+  background: var(--accent-muted);
+  color: var(--accent);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.btnEdit:hover {
+  background: var(--accent);
+  color: white;
+}
+
+.btnDelete {
+  padding: 0.375rem 0.875rem;
+  background: var(--danger-muted);
+  color: #FCA5A5;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.btnDelete:hover:not(:disabled) {
+  background: #EF4444;
+  color: white;
+}
+
+/* ===== Form ===== */
+.postForm {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.postFormTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.formError {
+  padding: 0.5rem 0.75rem;
+  background: var(--danger-muted);
+  border-radius: var(--radius-md);
+  color: #FCA5A5;
+  font-size: 0.8125rem;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.input {
+  padding: 0.625rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.input:focus {
+  border-color: var(--accent);
+}
+
+.textarea {
+  composes: input;
+  resize: vertical;
+  line-height: 1.7;
+  font-family: inherit;
+  min-height: 160px;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.formActions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.btnPrimary {
+  padding: 0.5rem 1.25rem;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-family: inherit;
+}
+
+.btnPrimary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btnPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnGhost {
+  padding: 0.5rem 1.25rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition-fast);
+}
+
+.btnGhost:hover {
+  background: var(--bg-hover);
+}
