@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.local
+.env
+.env.*
+!.env.example
+package-lock.json
+.cache
+*.tsbuildinfo
+commit_all.ps1
