@@ -13,8 +13,12 @@ import { CatalogPage } from './pages/Catalog/CatalogPage';
 import { WorkDetailPage } from './pages/Catalog/WorkDetailPage';
 import { DashboardPage } from './pages/Dashboard/DashboardPage';
 import { CreateWorkPage } from './pages/Dashboard/CreateWorkPage';
-import { ProfilePage } from './pages/Dashboard/ProfilePage';
 import { SupervisorsPage } from './pages/Supervisors/SupervisorsPage';
+import { SupervisorDetailPage } from './pages/Supervisors/SupervisorDetailPage';
+import { ColleaguesPage } from './pages/Supervisors/ColleaguesPage';
+import { WorkspacePage } from './pages/Dashboard/WorkspacePage';
+import { InfoPage } from './pages/Info/InfoPage';
+import { TopicsPage } from './pages/Topics/TopicsPage';
 import { AnalyticsPage } from './pages/Analytics/AnalyticsPage';
 import { AdminPage } from './pages/Admin/AdminPage';
 
@@ -31,6 +35,10 @@ function App(): ReactNode {
             <Route path="/catalog" element={<CatalogPage />} />
             <Route path="/catalog/:id" element={<WorkDetailPage />} />
             <Route path="/supervisors" element={<SupervisorsPage />} />
+            <Route path="/supervisors/:id" element={<SupervisorDetailPage />} />
+            <Route path="/colleagues" element={<ColleaguesPage />} />
+            <Route path="/info" element={<InfoPage />} />
+            <Route path="/topics" element={<TopicsPage />} />
 
             {/* Protected routes */}
             <Route
@@ -50,10 +58,10 @@ function App(): ReactNode {
               }
             />
             <Route
-              path="/dashboard/profile"
+              path="/dashboard/works/:id/workspace"
               element={
                 <ProtectedRoute>
-                  <ProfilePage />
+                  <WorkspacePage />
                 </ProtectedRoute>
               }
             />
