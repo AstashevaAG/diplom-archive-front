@@ -1,9 +1,9 @@
 import { useState, useEffect, type ReactNode, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks';
-import { usersApi } from '../../api';
+import { usersApi, portfolioApi } from '../../api';
 import { ROLE_LABELS } from '../../utils/constants';
-import { Role } from '../../types';
+import { Role, PortfolioItemType, PORTFOLIO_TYPE_LABELS, type StudentPortfolioItem, type CreatePortfolioItemData } from '../../types';
 import styles from './Profile.module.css';
 
 function getInitials(name: string): string {
@@ -15,6 +15,171 @@ function getInitials(name: string): string {
     .toUpperCase();
 }
 
+interface PortfolioFormProps {
+  onAdd: (item: StudentPortfolioItem) => void;
+}
+
+function PortfolioForm({ onAdd }: PortfolioFormProps): ReactNode {
+  const [title, setTitle] = useState('');
+  const [type, setType] = useState<PortfolioItemType>(PortfolioItemType.COURSEWORK);
+  const [description, setDescription] = useState('');
+  const [year, setYear] = useState('');
+  const [grade, setGrade] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    if (!title.trim()) return;
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const data: CreatePortfolioItemData = {
+        title: title.trim(),
+        type,
+        description: description.trim() || undefined,
+        year: year ? parseInt(year, 10) : undefined,
+        grade: grade.trim() || undefined,
+      };
+      const item = await portfolioApi.create(data);
+      onAdd(item);
+      setTitle('');
+      setDescription('');
+      setYear('');
+      setGrade('');
+    } catch {
+      setError('Не удалось добавить. Попробуйте ещё раз.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form className={styles.portfolioForm} onSubmit={(e) => void handleSubmit(e)}>
+      <div className={styles.portfolioFormTitle}>Добавить работу в портфолио</div>
+      {error && <div className={styles.error} style={{ margin: 0 }}>{error}</div>}
+      <div className={styles.row}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label} htmlFor="pf-title">Название *</label>
+          <input
+            id="pf-title"
+            type="text"
+            className={styles.input}
+            placeholder="Название работы"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+          />
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label} htmlFor="pf-type">Тип</label>
+          <select
+            id="pf-type"
+            className={styles.input}
+            value={type}
+            onChange={(e) => setType(e.target.value as PortfolioItemType)}
+          >
+            {Object.values(PortfolioItemType).map((t) => (
+              <option key={t} value={t}>{PORTFOLIO_TYPE_LABELS[t]}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+      <div className={styles.fieldGroup}>
+        <label className={styles.label} htmlFor="pf-desc">Описание</label>
+        <textarea
+          id="pf-desc"
+          className={styles.textarea}
+          placeholder="Краткое описание работы..."
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+      <div className={styles.row}>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label} htmlFor="pf-year">Год</label>
+          <input
+            id="pf-year"
+            type="number"
+            className={styles.input}
+            placeholder="2024"
+            min={1950}
+            max={2100}
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+          />
+        </div>
+        <div className={styles.fieldGroup}>
+          <label className={styles.label} htmlFor="pf-grade">Оценка</label>
+          <input
+            id="pf-grade"
+            type="text"
+            className={styles.input}
+            placeholder="Отлично / 5 / A"
+            value={grade}
+            onChange={(e) => setGrade(e.target.value)}
+          />
+        </div>
+      </div>
+      <button type="submit" className={styles.btnPrimary} disabled={isSubmitting || !title.trim()}>
+        {isSubmitting ? 'Добавление...' : 'Добавить'}
+      </button>
+    </form>
+  );
+}
+
+interface PortfolioItemCardProps {
+  item: StudentPortfolioItem;
+  onDelete: (id: string) => void;
+}
+
+function PortfolioItemCard({ item, onDelete }: PortfolioItemCardProps): ReactNode {
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async (): Promise<void> => {
+    if (!confirm('Удалить эту работу из портфолио?')) return;
+    setDeleting(true);
+    try {
+      await portfolioApi.delete(item.id);
+      onDelete(item.id);
+    } catch {
+      setDeleting(false);
+    }
+  };
+
+  return (
+    <div className={styles.portfolioItem}>
+      <div className={styles.portfolioItemHeader}>
+        <div>
+          <div className={styles.portfolioItemTitle}>{item.title}</div>
+          <div className={styles.portfolioItemMeta}>
+            <span className={styles.portfolioTypeBadge}>{PORTFOLIO_TYPE_LABELS[item.type]}</span>
+            {item.year && <span>{item.year}</span>}
+            {item.grade && <span className={styles.portfolioGrade}>{item.grade}</span>}
+          </div>
+        </div>
+        <button
+          type="button"
+          className={styles.deleteBtn}
+          onClick={() => void handleDelete()}
+          disabled={deleting}
+          title="Удалить"
+        >
+          ×
+        </button>
+      </div>
+      {item.description && (
+        <div className={styles.portfolioItemDesc}>{item.description}</div>
+      )}
+      {item.fileUrl && (
+        <a href={item.fileUrl} target="_blank" rel="noopener noreferrer" className={styles.portfolioFileLink}>
+          Открыть файл
+        </a>
+      )}
+    </div>
+  );
+}
+
 export function ProfilePage(): ReactNode {
   const { user, hasRole } = useAuth();
   const [fullName, setFullName] = useState('');
@@ -24,6 +189,7 @@ export function ProfilePage(): ReactNode {
   const [isSaving, setIsSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const [portfolioItems, setPortfolioItems] = useState<StudentPortfolioItem[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -34,12 +200,17 @@ export function ProfilePage(): ReactNode {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (hasRole(Role.STUDENT)) {
+      void portfolioApi.getMy().then(setPortfolioItems).catch(() => {});
+    }
+  }, [hasRole]);
+
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     setIsSaving(true);
     setSuccessMsg('');
     setErrorMsg('');
-
     try {
       await usersApi.updateMe({
         fullName: fullName.trim(),
@@ -65,7 +236,6 @@ export function ProfilePage(): ReactNode {
         <h1 className={styles.title}>Профиль</h1>
       </div>
 
-      {/* Tabs */}
       <div className={styles.tabs}>
         <Link to="/dashboard" className={styles.tab}>
           {hasRole(Role.SUPERVISOR) ? 'Подопечные' : 'Работы'}
@@ -77,9 +247,7 @@ export function ProfilePage(): ReactNode {
 
       <div className={styles.profileCard}>
         <div className={styles.profileHeader}>
-          <div className={styles.avatar}>
-            {getInitials(user.fullName)}
-          </div>
+          <div className={styles.avatar}>{getInitials(user.fullName)}</div>
           <div>
             <div className={styles.profileName}>{user.fullName}</div>
             <div className={styles.profileRole}>
@@ -159,6 +327,27 @@ export function ProfilePage(): ReactNode {
           </button>
         </div>
       </div>
+
+      {hasRole(Role.STUDENT) && (
+        <div className={styles.portfolioSection}>
+          <h2 className={styles.portfolioTitle}>Мои прошлые работы</h2>
+          <p className={styles.portfolioHint}>
+            Добавьте курсовые, личные проекты и другие работы — преподаватель сможет ознакомиться с ними при рассмотрении вашей заявки.
+          </p>
+          <PortfolioForm onAdd={(item) => setPortfolioItems((prev) => [item, ...prev])} />
+          {portfolioItems.length > 0 && (
+            <div className={styles.portfolioList}>
+              {portfolioItems.map((item) => (
+                <PortfolioItemCard
+                  key={item.id}
+                  item={item}
+                  onDelete={(id) => setPortfolioItems((prev) => prev.filter((i) => i.id !== id))}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
