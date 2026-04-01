@@ -1,8 +1,9 @@
-import { useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, useRef, type ReactNode, type SyntheticEvent, type KeyboardEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { worksApi } from '../../api';
-import { WORK_STATUS_LABELS } from '../../utils/constants';
-import type { Work } from '../../types';
+import { worksApi, commentsApi, stagesApi, reviewsApi, reviewCriteriaApi, filesApi } from '../../api';
+import { useAuth } from '../../hooks';
+import { Role, type Work, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
+import { WORK_STATUS_LABELS, formatDateTime } from '../../utils/constants';
 import styles from './WorkDetailPage.module.css';
 
 function FileIcon({ type }: { type: string }): ReactNode {
@@ -45,11 +46,389 @@ function getScoreClass(score: number | null): string {
   return styles.scoreLow;
 }
 
+function getInitials(name: string): string {
+  return name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+}
+
+// ===== Work Stages Component =====
+
+interface StagesProps {
+  workId: string;
+  canEdit: boolean;
+}
+
+function WorkStagesSection({ workId, canEdit }: StagesProps): ReactNode {
+  const [stages, setStages] = useState<WorkStage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    void stagesApi.getStages(workId)
+      .then((data) => { setStages(data); })
+      .catch(() => {})
+      .finally(() => { setIsLoading(false); });
+  }, [workId]);
+
+  const handleToggle = async (stage: WorkStage): Promise<void> => {
+    setTogglingId(stage.id);
+    try {
+      const updated = await stagesApi.updateStage(workId, stage.id, !stage.isCompleted);
+      setStages((prev) => prev.map((s) => s.id === stage.id ? updated : s));
+    } catch {
+      // ignore
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  if (isLoading) return <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Загрузка этапов...</div>;
+  if (stages.length === 0) return null;
+
+  const completedCount = stages.filter((s) => s.isCompleted).length;
+
+  return (
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>
+        Этапы работы ({completedCount}/{stages.length})
+      </h2>
+      <div className={styles.stageList}>
+        {stages.map((stage) => (
+          <div key={stage.id} className={styles.stageItem}>
+            <div className={`${styles.stageDot} ${stage.isCompleted ? styles.stageDotDone : ''}`}>
+              {stage.isCompleted && (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+            </div>
+            <span className={`${styles.stageName} ${stage.isCompleted ? styles.stageNameDone : ''}`}>
+              {stage.name}
+            </span>
+            {stage.isCompleted && stage.completedAt && (
+              <span className={styles.stageDate}>
+                {formatDateTime(stage.completedAt)}
+              </span>
+            )}
+            {canEdit && (
+              <button
+                type="button"
+                className={styles.stageToggleBtn}
+                onClick={() => { void handleToggle(stage); }}
+                disabled={togglingId === stage.id}
+              >
+                {stage.isCompleted ? 'Отменить' : 'Выполнено'}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ===== Comments Component =====
+
+interface CommentsProps {
+  workId: string;
+}
+
+function CommentsSection({ workId }: CommentsProps): ReactNode {
+  const { user, isAuthenticated } = useAuth();
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [text, setText] = useState('');
+  const [isSending, setIsSending] = useState(false);
+
+  useEffect(() => {
+    void commentsApi.getByWork(workId)
+      .then((data) => { setComments(data); })
+      .catch(() => {})
+      .finally(() => { setIsLoading(false); });
+  }, [workId]);
+
+  const handleSubmit = async (e: SyntheticEvent): Promise<void> => {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setIsSending(true);
+    try {
+      const comment = await commentsApi.create(workId, text.trim());
+      setComments((prev) => [...prev, comment]);
+      setText('');
+    } catch {
+      // ignore
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      void handleSubmit(e as unknown as SyntheticEvent);
+    }
+  };
+
+  const handleDelete = async (commentId: string): Promise<void> => {
+    try {
+      await commentsApi.delete(commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch {
+      // ignore
+    }
+  };
+
+  return (
+    <div className={styles.section}>
+      <h2 className={styles.sectionTitle}>
+        Комментарии ({String(comments.length)})
+      </h2>
+
+      {isLoading ? (
+        <div className={styles.noComments}>Загрузка...</div>
+      ) : comments.length === 0 ? (
+        <div className={styles.noComments}>Комментариев пока нет</div>
+      ) : (
+        <div className={styles.commentList}>
+          {comments.map((c) => (
+            <div key={c.id} className={styles.commentItem}>
+              <div className={styles.commentAvatar}>
+                {c.author ? getInitials(c.author.fullName) : '?'}
+              </div>
+              <div className={styles.commentBody}>
+                <div className={styles.commentHeader}>
+                  <span className={styles.commentAuthor}>
+                    {c.author?.fullName ?? 'Неизвестный'}
+                  </span>
+                  <span className={styles.commentTime}>{formatDateTime(c.createdAt)}</span>
+                  {user && (user.id === c.authorId || user.role === Role.ADMIN) && (
+                    <button
+                      type="button"
+                      onClick={() => { void handleDelete(c.id); }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--text-subtle)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        padding: '0 4px',
+                        marginLeft: 'auto',
+                      }}
+                      title="Удалить комментарий"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <div className={styles.commentText}>{c.text}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isAuthenticated ? (
+        <form className={styles.commentForm} onSubmit={(e) => void handleSubmit(e)}>
+          <textarea
+            className={styles.commentInput}
+            placeholder="Напишите комментарий... (Enter для отправки, Shift+Enter — новая строка)"
+            value={text}
+            onChange={(e) => { setText(e.target.value); }}
+            onKeyDown={handleKeyDown}
+            rows={2}
+          />
+          <button
+            type="submit"
+            className={styles.commentSubmit}
+            disabled={isSending || !text.trim()}
+          >
+            {isSending ? 'Отправка...' : 'Отправить'}
+          </button>
+        </form>
+      ) : (
+        <div className={styles.loginHint}>
+          <Link to="/login">Войдите</Link>, чтобы оставить комментарий
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ===== Review Section =====
+
+interface ReviewSectionProps {
+  workId: string;
+  isSupervisor: boolean;
+}
+
+function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [criteria, setCriteria] = useState<ReviewCriteriaConfig[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [scores, setScores] = useState<Record<string, number>>({});
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    void Promise.all([
+      reviewsApi.getByWork(workId),
+      reviewCriteriaApi.getAll(),
+    ]).then(([revs, crit]) => {
+      setReviews(revs);
+      setCriteria(crit);
+      const initScores: Record<string, number> = {};
+      crit.forEach((c) => { initScores[c.id] = 5; });
+      setScores(initScores);
+    }).catch(() => {}).finally(() => setIsLoading(false));
+  }, [workId]);
+
+  const totalScore = (): number => {
+    let weightedSum = 0;
+    let weightTotal = 0;
+    criteria.forEach((c) => {
+      const score = scores[c.id] ?? 5;
+      weightedSum += score * c.weight;
+      weightTotal += c.maxScore * c.weight;
+    });
+    if (weightTotal === 0) return 0;
+    return Math.round((weightedSum / weightTotal) * 100 * 100) / 100;
+  };
+
+  const handleSubmitReview = async (): Promise<void> => {
+    setIsSubmitting(true);
+    try {
+      const criteriaObj: Record<string, number> = {};
+      const weightsObj: Record<string, number> = {};
+      criteria.forEach((c) => {
+        criteriaObj[c.id] = scores[c.id] ?? 5;
+        weightsObj[c.id] = c.weight;
+      });
+      const review = await reviewsApi.create(workId, {
+        criteria: criteriaObj,
+        weights: weightsObj,
+        comment: comment.trim() || undefined,
+      });
+      setReviews((prev) => [review, ...prev]);
+      setShowForm(false);
+      setComment('');
+    } catch {
+      // ignore
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (isLoading) return null;
+
+  return (
+    <div className={styles.section}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <h2 className={styles.sectionTitle}>Рецензии ({reviews.length})</h2>
+        {isSupervisor && !showForm && (
+          <button type="button" onClick={() => setShowForm(true)}
+            style={{ padding: '0.375rem 0.875rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+            Добавить рецензию
+          </button>
+        )}
+      </div>
+
+      {showForm && (
+        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', marginBottom: '1.25rem' }}>
+          <div style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>
+            Оценка работы
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1rem' }}>
+            {criteria.map((c) => (
+              <div key={c.id}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.375rem' }}>
+                  <div>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontWeight: 500 }}>{c.name}</span>
+                    {c.description && (
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>
+                        (вес: {c.weight})
+                      </span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--accent)' }}>
+                    {scores[c.id] ?? 5}/{c.maxScore}
+                  </span>
+                </div>
+                {c.description && (
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>{c.description}</div>
+                )}
+                <input
+                  type="range"
+                  min={0}
+                  max={c.maxScore}
+                  step={1}
+                  value={scores[c.id] ?? 5}
+                  onChange={(e) => setScores((prev) => ({ ...prev, [c.id]: parseInt(e.target.value, 10) }))}
+                  style={{ width: '100%', accentColor: 'var(--accent)' }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ padding: '0.75rem 1rem', background: 'var(--accent-muted)', borderRadius: 'var(--radius-md)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>Итоговая оценка</span>
+            <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--accent)' }}>{totalScore()}%</span>
+          </div>
+          <textarea
+            placeholder="Общий комментарий к рецензии (необязательно)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            style={{ width: '100%', padding: '0.625rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.875rem', minHeight: '80px', resize: 'vertical', outline: 'none', fontFamily: 'inherit', boxSizing: 'border-box', marginBottom: '1rem' }}
+          />
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button type="button" disabled={isSubmitting} onClick={() => void handleSubmitReview()}
+              style={{ padding: '0.5rem 1.25rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: isSubmitting ? 0.5 : 1 }}>
+              {isSubmitting ? 'Отправка...' : 'Сохранить рецензию'}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              style={{ padding: '0.5rem 1.25rem', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>
+              Отмена
+            </button>
+          </div>
+        </div>
+      )}
+
+      {reviews.length === 0 && !showForm && (
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', textAlign: 'center', padding: '1.5rem 0' }}>
+          Рецензий пока нет
+        </div>
+      )}
+
+      {reviews.map((r) => (
+        <div key={r.id} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {r.reviewer?.fullName ?? 'Рецензент'}
+            </span>
+            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent)' }}>
+              {r.totalScore}%
+            </span>
+          </div>
+          {r.comment && (
+            <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{r.comment}</div>
+          )}
+          {r.isFinalized && (
+            <div style={{ marginTop: '0.375rem', fontSize: '0.75rem', color: 'var(--success)', fontWeight: 500 }}>Финализирована</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ===== Main Page =====
+
 export function WorkDetailPage(): ReactNode {
   const { id } = useParams<{ id: string }>();
+  const { user, isAuthenticated } = useAuth();
   const [work, setWork] = useState<Work | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -84,15 +463,49 @@ export function WorkDetailPage(): ReactNode {
     );
   }
 
+  const canEditStages =
+    isAuthenticated &&
+    user !== null &&
+    (user.id === work.authorId || user.id === work.supervisorId || user.role === Role.ADMIN);
+
+  const isParticipant =
+    isAuthenticated &&
+    user !== null &&
+    (user.id === work.authorId || user.id === work.supervisorId);
+
+  const handleFileUpload = async (file: File): Promise<void> => {
+    if (!id) return;
+    setIsUploadingFile(true);
+    try {
+      await filesApi.upload(id, file);
+      const updated = await worksApi.getById(id);
+      setWork(updated);
+    } catch {
+      // ignore
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   return (
     <div className={styles.page}>
-      <Link to="/catalog" className={styles.backLink}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m12 19-7-7 7-7" />
-          <path d="M19 12H5" />
-        </svg>
-        Назад к каталогу
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <Link to="/catalog" className={styles.backLink} style={{ margin: 0 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m12 19-7-7 7-7" />
+            <path d="M19 12H5" />
+          </svg>
+          Назад к каталогу
+        </Link>
+        {isParticipant && (
+          <Link
+            to={`/dashboard/works/${work.id}/workspace`}
+            style={{ fontSize: '0.8125rem', color: 'var(--accent)', textDecoration: 'none', fontWeight: 500 }}
+          >
+            Рабочее пространство →
+          </Link>
+        )}
+      </div>
 
       <div className={styles.header}>
         <div className={styles.titleRow}>
@@ -208,7 +621,46 @@ export function WorkDetailPage(): ReactNode {
         ) : (
           <div className={styles.noFiles}>Файлы ещё не загружены</div>
         )}
+        {isParticipant && (
+          <>
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handleFileUpload(file);
+                e.target.value = '';
+              }}
+            />
+            <button
+              type="button"
+              className={styles.uploadBtn}
+              disabled={isUploadingFile}
+              onClick={() => fileInputRef.current?.click()}
+              style={{ marginTop: '0.75rem', padding: '0.5rem 1rem', background: 'none', border: '1px dashed var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-muted)', fontSize: '0.8125rem', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', width: '100%' }}
+            >
+              {isUploadingFile ? 'Загрузка...' : '+ Прикрепить файл'}
+            </button>
+          </>
+        )}
       </div>
+
+      {/* Stages — only for participants */}
+      {(isParticipant || canEditStages) && id && (
+        <WorkStagesSection workId={id} canEdit={canEditStages} />
+      )}
+
+      {/* Reviews with 10-criteria form */}
+      {id && (
+        <ReviewSection
+          workId={id}
+          isSupervisor={isAuthenticated && user?.role === Role.SUPERVISOR}
+        />
+      )}
+
+      {/* Comments */}
+      {id && <CommentsSection workId={id} />}
     </div>
   );
 }
