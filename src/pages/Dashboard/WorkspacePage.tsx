@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewModal';
+import { WorkMetaEditor } from '../../components/WorkMetaEditor/WorkMetaEditor';
 import { worksApi, stagesApi, filesApi } from '../../api';
 import { useAuth, useWorkChat } from '../../hooks';
 import { WorkStatus, type Work, type WorkFile, type WorkStage } from '../../types';
@@ -166,6 +167,24 @@ export function WorkspacePage(): ReactNode {
             Опубликовать в каталоге
           </button>
         )}
+      </div>
+
+      <div className={styles.workMetaBlock}>
+        <WorkMetaEditor work={work} onSaved={(w) => setWork(w)} />
+        {work.description?.trim() && (
+          <div className={styles.textBlock}>
+            <h3 className={styles.textBlockTitle}>Описание</h3>
+            <p className={styles.textBlockBody}>{work.description}</p>
+          </div>
+        )}
+        <div className={styles.textBlock}>
+          <h3 className={styles.textBlockTitle}>Аннотация</h3>
+          {work.annotation?.trim() ? (
+            <p className={styles.textBlockBody}>{work.annotation}</p>
+          ) : (
+            <p className={styles.textBlockMuted}>Аннотация не заполнена — укажите её в форме редактирования выше.</p>
+          )}
+        </div>
       </div>
 
       {/* Progress */}

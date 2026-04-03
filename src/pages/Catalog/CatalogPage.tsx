@@ -264,7 +264,10 @@ export function CatalogPage(): ReactNode {
                 return (
                   <div key={work.id} className={`${styles.card} ${styles.inProgressCard}`}>
                     <div className={styles.cardTitle}>{work.title}</div>
-                    {work.annotation && (
+                    {work.description?.trim() && (
+                      <div className={styles.cardDescription}>{work.description}</div>
+                    )}
+                    {work.annotation?.trim() && (
                       <div className={styles.cardAnnotation}>{work.annotation}</div>
                     )}
                     <div className={styles.cardMeta}>
@@ -287,7 +290,10 @@ export function CatalogPage(): ReactNode {
               return (
                 <Link to={`/catalog/${work.id}`} className={styles.card} key={work.id}>
                   <div className={styles.cardTitle}>{work.title}</div>
-                  {work.annotation && (
+                  {work.description?.trim() && (
+                    <div className={styles.cardDescription}>{work.description}</div>
+                  )}
+                  {work.annotation?.trim() && (
                     <div className={styles.cardAnnotation}>{work.annotation}</div>
                   )}
                   <div className={styles.cardMeta}>

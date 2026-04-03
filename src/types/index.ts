@@ -97,6 +97,7 @@ export interface WorkAuthor {
 export interface Work {
   id: string;
   title: string;
+  description?: string | null;
   annotation: string | null;
   category: string | null;
   tags: string[];
@@ -117,6 +118,7 @@ export interface Work {
 
 export interface CreateWorkData {
   title: string;
+  description?: string;
   annotation?: string;
   category?: string;
   tags?: string[];
@@ -126,6 +128,7 @@ export interface CreateWorkData {
 
 export interface UpdateWorkData {
   title?: string;
+  description?: string;
   annotation?: string;
   category?: string;
   tags?: string[];
@@ -172,6 +175,7 @@ export interface WorkQueryParams {
 export interface SearchResult {
   id: string;
   title: string;
+  description?: string | null;
   annotation: string | null;
   category: string | null;
   tags: string[];

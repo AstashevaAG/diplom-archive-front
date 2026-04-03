@@ -164,6 +164,14 @@
   font-size: 0.9375rem;
 }
 
+.annotationMuted {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* ===== Files ===== */
 .filesList {
   display: grid;

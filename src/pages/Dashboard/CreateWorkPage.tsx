@@ -31,6 +31,7 @@ export function CreateWorkPage(): ReactNode {
   const [uploadProgress, setUploadProgress] = useState('');
 
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [annotation, setAnnotation] = useState('');
   const [category, setCategory] = useState('');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -84,6 +85,7 @@ export function CreateWorkPage(): ReactNode {
       const data: CreateWorkData = {
         title: title.trim(),
       };
+      if (description.trim()) data.description = description.trim();
       if (annotation.trim()) data.annotation = annotation.trim();
       if (category) data.category = category;
       if (tags.length > 0) data.tags = tags;
@@ -148,15 +150,30 @@ export function CreateWorkPage(): ReactNode {
         </div>
 
         <div className={styles.formGroup}>
+          <label className={styles.label} htmlFor="work-description">
+            Описание (тема, цели)
+          </label>
+          <textarea
+            id="work-description"
+            className={styles.textarea}
+            placeholder="О чём работа, какие задачи ставятся"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        <div className={styles.formGroup}>
           <label className={styles.label} htmlFor="work-annotation">
             Аннотация
           </label>
           <textarea
             id="work-annotation"
             className={styles.textarea}
-            placeholder="Краткое описание работы..."
+            placeholder="Аннотация для каталога и поиска (можно заполнить позже)"
             value={annotation}
             onChange={(e) => setAnnotation(e.target.value)}
+            rows={4}
           />
         </div>
 

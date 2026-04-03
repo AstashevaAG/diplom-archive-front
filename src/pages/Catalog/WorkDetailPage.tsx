@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { worksApi, commentsApi, stagesApi, reviewsApi, reviewCriteriaApi, filesApi } from '../../api';
 import { useAuth } from '../../hooks';
 import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewModal';
+import { WorkMetaEditor } from '../../components/WorkMetaEditor/WorkMetaEditor';
 import { Role, type Work, type WorkFile, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
 import { WORK_STATUS_LABELS, formatDateTime } from '../../utils/constants';
 import styles from './WorkDetailPage.module.css';
@@ -564,6 +565,10 @@ export function WorkDetailPage(): ReactNode {
         )}
       </div>
 
+      {isParticipant && (
+        <WorkMetaEditor work={work} onSaved={(w) => setWork(w)} />
+      )}
+
       {/* Stats */}
       <div className={styles.statsRow}>
         <div className={styles.stat}>
@@ -586,11 +591,23 @@ export function WorkDetailPage(): ReactNode {
         </div>
       </div>
 
-      {/* Annotation */}
-      {work.annotation && (
+      {work.description?.trim() && (
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Описание</h2>
+          <p className={styles.annotation}>{work.description}</p>
+        </div>
+      )}
+
+      {(work.annotation?.trim() || isParticipant) && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Аннотация</h2>
-          <p className={styles.annotation}>{work.annotation}</p>
+          {work.annotation?.trim() ? (
+            <p className={styles.annotation}>{work.annotation}</p>
+          ) : (
+            isParticipant && (
+              <p className={styles.annotationMuted}>Аннотация пока не заполнена — добавьте её в блоке редактирования выше.</p>
+            )
+          )}
         </div>
       )}
 

@@ -287,7 +287,12 @@ function WorksTab({ isSupervisor }: WorksTabProps): ReactNode {
             return (
               <div key={work.id} className={styles.card}>
                 <div className={styles.cardTitle}>{work.title}</div>
-                {work.annotation && <div className={styles.cardAnnotation}>{work.annotation}</div>}
+                {work.description?.trim() && (
+                  <div className={styles.cardDescription}>{work.description}</div>
+                )}
+                {work.annotation?.trim() && (
+                  <div className={styles.cardAnnotation}>{work.annotation}</div>
+                )}
                 <div className={styles.cardMeta}>
                   <span className={styles.badge}>{WORK_STATUS_LABELS[work.status] ?? work.status}</span>
                   {isSupervisor && <span>{work.author.fullName}</span>}
