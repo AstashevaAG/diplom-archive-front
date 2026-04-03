@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, type ReactNode, type FormEvent } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewModal';
 import { worksApi, stagesApi, filesApi } from '../../api';
 import { useAuth, useWorkChat } from '../../hooks';
-import { WorkStatus, type Work, type WorkStage } from '../../types';
+import { WorkStatus, type Work, type WorkFile, type WorkStage } from '../../types';
 import { WORK_STATUS_LABELS } from '../../utils/constants';
 import styles from './Workspace.module.css';
 
@@ -32,6 +33,7 @@ export function WorkspacePage(): ReactNode {
   const [newStatus, setNewStatus] = useState<WorkStatus | ''>('');
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [previewFile, setPreviewFile] = useState<WorkFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -216,10 +218,23 @@ export function WorkspacePage(): ReactNode {
             {work.files && work.files.length > 0 && (
               <div className={styles.filesList}>
                 {work.files.map((f) => (
-                  <a key={f.id} href={`/api/files/${f.id}`} target="_blank" rel="noopener noreferrer" className={styles.fileItem}>
-                    <span className={styles.fileIcon}>📄</span>
-                    <span className={styles.fileName}>{f.originalName}</span>
-                  </a>
+                  <button
+                    key={f.id}
+                    type="button"
+                    className={`${styles.fileItem} ${styles.fileItemBtn}`}
+                    onClick={() => setPreviewFile(f)}
+                    aria-label={`Открыть предпросмотр: ${f.originalName}`}
+                  >
+                    <span className={styles.fileIcon} aria-hidden>📄</span>
+                    <div className={styles.fileMeta}>
+                      <span className={styles.fileName}>{f.originalName}</span>
+                      <span className={styles.fileTypeBadge}>{f.type}</span>
+                    </div>
+                    <span className={styles.fileOpenHint}>
+                      <span className={styles.fileOpenText}>Просмотр</span>
+                      <span className={styles.fileOpenArrow} aria-hidden>→</span>
+                    </span>
+                  </button>
                 ))}
               </div>
             )}
@@ -315,6 +330,15 @@ export function WorkspacePage(): ReactNode {
           </form>
         </div>
       </div>
+
+      <FilePreviewModal
+        file={
+          previewFile
+            ? { id: previewFile.id, originalName: previewFile.originalName, type: previewFile.type }
+            : null
+        }
+        onClose={() => setPreviewFile(null)}
+      />
     </div>
   );
 }

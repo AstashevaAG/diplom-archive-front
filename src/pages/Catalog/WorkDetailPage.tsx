@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, type ReactNode, type SyntheticEvent, type 
 import { Link, useParams } from 'react-router-dom';
 import { worksApi, commentsApi, stagesApi, reviewsApi, reviewCriteriaApi, filesApi } from '../../api';
 import { useAuth } from '../../hooks';
-import { Role, type Work, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
+import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewModal';
+import { Role, type Work, type WorkFile, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
 import { WORK_STATUS_LABELS, formatDateTime } from '../../utils/constants';
 import styles from './WorkDetailPage.module.css';
 
@@ -428,6 +429,7 @@ export function WorkDetailPage(): ReactNode {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [previewFile, setPreviewFile] = useState<WorkFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -600,22 +602,25 @@ export function WorkDetailPage(): ReactNode {
         {work.files && work.files.length > 0 ? (
           <div className={styles.filesList}>
             {work.files.map((file) => (
-              <a
+              <button
                 key={file.id}
-                href={`/api/files/${file.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={styles.fileItem}
+                type="button"
+                className={`${styles.fileItem} ${styles.fileItemBtn}`}
+                onClick={() => setPreviewFile(file)}
+                aria-label={`Открыть предпросмотр: ${file.originalName}`}
               >
                 <span className={styles.fileIcon}>
                   <FileIcon type={file.type} />
                 </span>
                 <div className={styles.fileInfo}>
                   <div className={styles.fileName}>{file.originalName}</div>
-                  <div className={styles.fileType}>{file.type}</div>
+                  <span className={styles.fileTypeBadge}>{file.type}</span>
                 </div>
-                <span className={styles.fileAction}>Открыть</span>
-              </a>
+                <span className={styles.fileAction}>
+                  <span className={styles.fileActionText}>Просмотр</span>
+                  <span className={styles.fileActionArrow} aria-hidden>→</span>
+                </span>
+              </button>
             ))}
           </div>
         ) : (
@@ -661,6 +666,15 @@ export function WorkDetailPage(): ReactNode {
 
       {/* Comments */}
       {id && <CommentsSection workId={id} />}
+
+      <FilePreviewModal
+        file={
+          previewFile
+            ? { id: previewFile.id, originalName: previewFile.originalName, type: previewFile.type }
+            : null
+        }
+        onClose={() => setPreviewFile(null)}
+      />
     </div>
   );
 }

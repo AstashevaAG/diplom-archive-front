@@ -14,4 +14,8 @@ export const filesApi = {
 
   delete: (fileId: string) =>
     api.delete(`/files/${fileId}`).then((r) => r.data),
+
+  /** Для предпросмотра в модалке (с заголовком Authorization, если есть токен) */
+  getBlob: (fileId: string) =>
+    api.get<Blob>(`/files/${fileId}`, { responseType: 'blob' }).then((r) => r.data),
 };
