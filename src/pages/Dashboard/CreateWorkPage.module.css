@@ -361,8 +361,8 @@
 .error {
   padding: 0.625rem 0.75rem;
   background: var(--danger-muted);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(180, 35, 24, 0.2);
   border-radius: var(--radius-md);
-  color: #FCA5A5;
+  color: var(--danger);
   font-size: 0.8125rem;
 }

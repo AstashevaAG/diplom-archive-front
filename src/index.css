@@ -3,39 +3,44 @@
 /* ===== Design Tokens ===== */
 :root {
   /* Background */
-  --bg-primary: #09090B;
-  --bg-secondary: #111114;
-  --bg-elevated: #18181B;
-  --bg-surface: #1C1C20;
-  --bg-hover: #27272A;
-  --bg-active: #2E2E33;
+  --bg-primary: #F4FAFD;
+  --bg-secondary: white;
+  --bg-elevated: #FFFFFF;
+  --bg-surface: #E4F0F6;
+  --bg-hover: #D7EAF4;
+  --bg-active: #B4D0E1;
 
   /* Text */
-  --text-primary: #FAFAFA;
-  --text-secondary: #A1A1AA;
-  --text-muted: #71717A;
-  --text-subtle: #52525B;
+  --text-primary: #003466;
+  --text-secondary: #174D73;
+  --text-muted: #4C6F86;
+  --text-subtle: #6F8B9D;
 
   /* Accent */
-  --accent: #6366F1;
-  --accent-hover: #818CF8;
-  --accent-muted: rgba(99, 102, 241, 0.12);
-  --accent-subtle: rgba(99, 102, 241, 0.06);
+  --accent: #F57921;
+  --accent-hover: #D9610A;
+  --accent-rgb: 245, 121, 33;
+  --accent-muted: rgba(245, 121, 33, 0.14);
+  --accent-subtle: rgba(245, 121, 33, 0.08);
+  --accent-blue: #006599;
+  --accent-blue-hover: #004F78;
+  --accent-blue-muted: rgba(0, 101, 153, 0.12);
+  --deep-blue: #003466;
 
   /* Semantic */
-  --success: #22C55E;
-  --success-muted: rgba(34, 197, 94, 0.12);
-  --warning: #EAB308;
-  --warning-muted: rgba(234, 179, 8, 0.12);
-  --danger: #EF4444;
-  --danger-muted: rgba(239, 68, 68, 0.12);
-  --info: #2DD4BF;
-  --info-muted: rgba(45, 212, 191, 0.12);
+  --success: #1F8A4C;
+  --success-muted: rgba(31, 138, 76, 0.12);
+  --warning: #B56A00;
+  --warning-muted: rgba(245, 121, 33, 0.16);
+  --danger: #B42318;
+  --danger-muted: rgba(180, 35, 24, 0.12);
+  --info: #006599;
+  --info-muted: rgba(0, 101, 153, 0.12);
 
   /* Border */
-  --border: #27272A;
-  --border-hover: #3F3F46;
-  --border-accent: rgba(99, 102, 241, 0.3);
+  --border: #A8C8DA;
+  --border-hover: #006599;
+  --border-accent: rgba(245, 121, 33, 0.35);
 
   /* Radius */
   --radius-sm: 4px;
@@ -44,13 +49,14 @@
   --radius-xl: 12px;
 
   /* Shadow */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(0, 52, 102, 0.08);
+  --shadow-md: 0 2px 8px rgba(0, 52, 102, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 52, 102, 0.14);
+  --shadow-xl: 0 18px 42px rgba(0, 52, 102, 0.18);
 
   /* Spacing */
   --header-height: 56px;
+  --mobile-tabbar-height: 72px;
   --content-max-width: 1120px;
   --sidebar-width: 240px;
 
@@ -74,14 +80,26 @@ html {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   line-height: 1.5;
-  background: var(--bg-primary);
+  background: linear-gradient(180deg, #F8FCFE 0%, var(--bg-primary) 42%, #E7F3F8 100%);
   color: var(--text-primary);
   tab-size: 4;
+  overflow-x: hidden;
 }
 
 body {
   min-height: 100vh;
-  background: var(--bg-primary);
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 101, 153, 0.13), transparent 30rem),
+    radial-gradient(circle at 90% 8%, rgba(245, 121, 33, 0.12), transparent 24rem),
+    linear-gradient(180deg, #F8FCFE 0%, var(--bg-primary) 42%, #E7F3F8 100%);
+  overflow-x: hidden;
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
 }
 
 a {
@@ -127,4 +145,50 @@ img, svg {
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+@media (max-width: 768px) {
+  *,
+  *::before,
+  *::after {
+    min-width: 0;
+  }
+
+  html {
+    font-size: 15px;
+  }
+
+  body {
+    overscroll-behavior-y: contain;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button,
+  input,
+  select,
+  textarea,
+  a {
+    touch-action: manipulation;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+
+  main > [class*="page"] {
+    max-width: 100%;
+    width: 100%;
+    padding: 1.25rem 1rem;
+    overflow-x: hidden;
+  }
+
+  [class*="grid"] {
+    gap: 0.75rem;
+  }
+
+  [class*="card"] {
+    border-radius: var(--radius-lg);
+  }
 }

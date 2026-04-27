@@ -132,10 +132,13 @@ export function Layout({ children }: LayoutProps): ReactNode {
   const getNavLinkClass = ({ isActive }: { isActive: boolean }): string =>
     `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`;
 
+  const getMobileNavLinkClass = ({ isActive }: { isActive: boolean }): string =>
+    `${styles.mobileTabLink} ${isActive ? styles.mobileTabLinkActive : ''}`;
+
   return (
     <div className={styles.layout}>
       <header className={styles.header}>
-        <Link to="/" className={styles.logo}>
+        <Link to={isAuthenticated ? '/dashboard' : '/'} className={styles.logo}>
           <span className={styles.logoIcon}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -145,50 +148,46 @@ export function Layout({ children }: LayoutProps): ReactNode {
           Архив ВКР
         </Link>
 
-        <nav className={styles.nav}>
-          <NavLink to="/catalog" className={getNavLinkClass}>
-            Каталог
-          </NavLink>
-
-          <NavLink to="/info" className={getNavLinkClass}>
-            Гид
-          </NavLink>
-
-          <NavLink to="/topics" className={getNavLinkClass}>
-            Темы
-          </NavLink>
-
-          {/* Students see supervisors list; supervisors see colleagues */}
-          {!hasRole(Role.SUPERVISOR) && !hasRole(Role.ADMIN) && (
-            <NavLink to="/supervisors" className={getNavLinkClass}>
-              Руководители
-            </NavLink>
-          )}
-
-          {(hasRole(Role.SUPERVISOR) || hasRole(Role.ADMIN)) && (
-            <NavLink to="/colleagues" className={getNavLinkClass}>
-              Коллеги
-            </NavLink>
-          )}
-
-          {isAuthenticated && (
+        {isAuthenticated && (
+          <nav className={styles.nav}>
             <NavLink to="/dashboard" className={getNavLinkClass}>
               Кабинет
             </NavLink>
-          )}
 
-          {(hasRole(Role.SUPERVISOR) || hasRole(Role.ADMIN)) && (
-            <NavLink to="/analytics" className={getNavLinkClass}>
-              Аналитика
+            <NavLink to="/catalog" className={getNavLinkClass}>
+              Каталог
             </NavLink>
-          )}
 
-          {hasRole(Role.ADMIN) && (
-            <NavLink to="/admin" className={getNavLinkClass}>
-              Управление
+            <NavLink to="/topics" className={getNavLinkClass}>
+              Темы
             </NavLink>
-          )}
-        </nav>
+
+            {/* Students see supervisors list; supervisors see colleagues */}
+            {!hasRole(Role.SUPERVISOR) && !hasRole(Role.ADMIN) && (
+              <NavLink to="/supervisors" className={getNavLinkClass}>
+                Руководители
+              </NavLink>
+            )}
+
+            {(hasRole(Role.SUPERVISOR) || hasRole(Role.ADMIN)) && (
+              <NavLink to="/colleagues" className={getNavLinkClass}>
+                Коллеги
+              </NavLink>
+            )}
+
+            {(hasRole(Role.SUPERVISOR) || hasRole(Role.ADMIN)) && (
+              <NavLink to="/analytics" className={getNavLinkClass}>
+                Аналитика
+              </NavLink>
+            )}
+
+            {hasRole(Role.ADMIN) && (
+              <NavLink to="/admin" className={getNavLinkClass}>
+                Управление
+              </NavLink>
+            )}
+          </nav>
+        )}
 
         <div className={styles.headerActions}>
           {isAuthenticated && user ? (
@@ -227,15 +226,109 @@ export function Layout({ children }: LayoutProps): ReactNode {
 
       <main className={styles.main}>{children}</main>
 
+      <nav className={styles.mobileTabBar} aria-label="Основная навигация">
+        {isAuthenticated ? (
+          <>
+            <NavLink to="/dashboard" className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 3h7v8H3z" />
+                <path d="M14 3h7v5h-7z" />
+                <path d="M14 12h7v9h-7z" />
+                <path d="M3 15h7v6H3z" />
+              </svg>
+              <span>Кабинет</span>
+            </NavLink>
+
+            <NavLink to="/catalog" className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z" />
+              </svg>
+              <span>Каталог</span>
+            </NavLink>
+
+            <NavLink to="/topics" className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 5v14" />
+                <path d="M5 12h14" />
+              </svg>
+              <span>Темы</span>
+            </NavLink>
+
+            {!hasRole(Role.SUPERVISOR) && !hasRole(Role.ADMIN) && (
+              <NavLink to="/supervisors" className={getMobileNavLinkClass}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>Руковод.</span>
+              </NavLink>
+            )}
+
+            {(hasRole(Role.SUPERVISOR) || hasRole(Role.ADMIN)) && (
+              <NavLink to="/colleagues" className={getMobileNavLinkClass}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>Коллеги</span>
+              </NavLink>
+            )}
+
+            <NavLink to="/dashboard" className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 21a8 8 0 1 0-16 0" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <span>Профиль</span>
+            </NavLink>
+          </>
+        ) : (
+          <>
+            <NavLink to="/" end className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="m3 11 9-8 9 8" />
+                <path d="M5 10v10h14V10" />
+                <path d="M9 20v-6h6v6" />
+              </svg>
+              <span>Главная</span>
+            </NavLink>
+            <NavLink to="/login" className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <path d="m10 17 5-5-5-5" />
+                <path d="M15 12H3" />
+              </svg>
+              <span>Войти</span>
+            </NavLink>
+            <NavLink to="/register" className={getMobileNavLinkClass}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M19 8v6" />
+                <path d="M22 11h-6" />
+              </svg>
+              <span>Рег.</span>
+            </NavLink>
+          </>
+        )}
+      </nav>
+
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <span className={styles.footerText}>
             © {String(new Date().getFullYear())} Университет практической психологии
           </span>
-          <div className={styles.footerLinks}>
-            <Link to="/catalog" className={styles.footerLink}>Каталог</Link>
-            <Link to="/supervisors" className={styles.footerLink}>Руководители</Link>
-          </div>
+          {isAuthenticated && (
+            <div className={styles.footerLinks}>
+              <Link to="/catalog" className={styles.footerLink}>Каталог</Link>
+              <Link to="/dashboard" className={styles.footerLink}>Кабинет</Link>
+            </div>
+          )}
         </div>
       </footer>
     </div>

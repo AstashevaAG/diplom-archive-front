@@ -259,7 +259,7 @@
 .convertedHint {
   padding: 0.375rem 0.75rem;
   background: var(--accent-muted);
-  border: 1px solid rgba(var(--accent-rgb, 99, 102, 241), 0.2);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   color: var(--accent);

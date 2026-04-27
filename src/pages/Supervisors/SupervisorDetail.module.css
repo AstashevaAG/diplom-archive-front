@@ -179,7 +179,7 @@
   padding: 0.375rem 0.875rem;
   background: var(--accent-muted);
   color: var(--accent);
-  border: 1px solid rgba(var(--accent-rgb, 99, 102, 241), 0.3);
+  border: 1px solid rgba(var(--accent-rgb), 0.3);
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 600;
@@ -251,7 +251,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 52, 102, 0.32);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -300,7 +300,7 @@
   padding: 0.5rem 0.75rem;
   background: var(--danger-muted);
   border-radius: var(--radius-md);
-  color: #FCA5A5;
+  color: var(--danger);
   font-size: 0.8125rem;
 }
 

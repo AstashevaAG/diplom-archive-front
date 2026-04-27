@@ -223,7 +223,7 @@
 .actionBtnDanger:hover {
   background: var(--danger-muted);
   color: var(--danger);
-  border-color: rgba(239, 68, 68, 0.2);
+  border-color: rgba(180, 35, 24, 0.2);
 }
 
 /* ===== Empty / Loading ===== */

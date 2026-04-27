@@ -229,7 +229,7 @@
   padding: 0.375rem 0.875rem;
   background: var(--accent-muted);
   color: var(--accent);
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -246,8 +246,8 @@
 .btnDelete {
   padding: 0.375rem 0.875rem;
   background: var(--danger-muted);
-  color: #FCA5A5;
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--danger);
+  border: 1px solid rgba(180, 35, 24, 0.2);
   border-radius: var(--radius-md);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -257,7 +257,7 @@
 }
 
 .btnDelete:hover:not(:disabled) {
-  background: #EF4444;
+  background: var(--danger);
   color: white;
 }
 
@@ -283,7 +283,7 @@
   padding: 0.5rem 0.75rem;
   background: var(--danger-muted);
   border-radius: var(--radius-md);
-  color: #FCA5A5;
+  color: var(--danger);
   font-size: 0.8125rem;
 }
 

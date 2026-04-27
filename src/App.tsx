@@ -1,8 +1,8 @@
 import { type ReactNode } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout/Layout';
-import { ProtectedRoute } from './components/ProtectedRoute/ProtectedRoute';
+import { ProtectedRoute, PublicOnlyRoute } from './components/ProtectedRoute/ProtectedRoute';
 import { Role } from './types';
 
 // Pages
@@ -23,22 +23,25 @@ import { AnalyticsPage } from './pages/Analytics/AnalyticsPage';
 import { AdminPage } from './pages/Admin/AdminPage';
 
 function App(): ReactNode {
+  const studentRoles = [Role.STUDENT, Role.GRADUATE];
+  const supervisorRoles = [Role.SUPERVISOR, Role.ADMIN];
+
   return (
     <BrowserRouter>
       <AuthProvider>
         <Layout>
           <Routes>
             {/* Public routes */}
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/catalog" element={<CatalogPage />} />
-            <Route path="/catalog/:id" element={<WorkDetailPage />} />
-            <Route path="/supervisors" element={<SupervisorsPage />} />
-            <Route path="/supervisors/:id" element={<SupervisorDetailPage />} />
-            <Route path="/colleagues" element={<ColleaguesPage />} />
-            <Route path="/info" element={<InfoPage />} />
-            <Route path="/topics" element={<TopicsPage />} />
+            <Route path="/" element={<PublicOnlyRoute><HomePage /></PublicOnlyRoute>} />
+            <Route path="/login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
+            <Route path="/register" element={<PublicOnlyRoute><RegisterPage /></PublicOnlyRoute>} />
+            <Route path="/catalog" element={<ProtectedRoute><CatalogPage /></ProtectedRoute>} />
+            <Route path="/catalog/:id" element={<ProtectedRoute><WorkDetailPage /></ProtectedRoute>} />
+            <Route path="/supervisors" element={<ProtectedRoute roles={studentRoles}><SupervisorsPage /></ProtectedRoute>} />
+            <Route path="/supervisors/:id" element={<ProtectedRoute roles={studentRoles}><SupervisorDetailPage /></ProtectedRoute>} />
+            <Route path="/colleagues" element={<ProtectedRoute roles={supervisorRoles}><ColleaguesPage /></ProtectedRoute>} />
+            <Route path="/info" element={<ProtectedRoute><InfoPage /></ProtectedRoute>} />
+            <Route path="/topics" element={<ProtectedRoute><TopicsPage /></ProtectedRoute>} />
 
             {/* Protected routes */}
             <Route
@@ -52,7 +55,7 @@ function App(): ReactNode {
             <Route
               path="/dashboard/works/new"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute roles={studentRoles}>
                   <CreateWorkPage />
                 </ProtectedRoute>
               }
@@ -78,7 +81,7 @@ function App(): ReactNode {
             <Route
               path="/analytics"
               element={
-                <ProtectedRoute roles={[Role.SUPERVISOR, Role.ADMIN]}>
+                <ProtectedRoute roles={supervisorRoles}>
                   <AnalyticsPage />
                 </ProtectedRoute>
               }
@@ -101,6 +104,7 @@ function App(): ReactNode {
                 </ProtectedRoute>
               }
             />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Layout>
       </AuthProvider>
