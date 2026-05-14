@@ -4,7 +4,6 @@ const config: CapacitorConfig = {
   appId: 'com.diplomarchive.app',
   appName: 'Архив ВКР',
   webDir: 'dist',
-  bundledWebRuntime: false,
   server: {
     androidScheme: 'http',
   },

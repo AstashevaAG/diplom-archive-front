@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import type { User, Role, AuthResponse, RegisterData, LoginData } from '../types';
+import type { User, Role, AuthResponse, RegisterData, LoginData, RegisterResponse } from '../types';
 import { authApi } from '../api/authApi';
 import { usersApi } from '../api/usersApi';
 
@@ -15,7 +15,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  register: (data: RegisterData) => Promise<RegisterResponse>;
   logout: () => Promise<void>;
   hasRole: (...roles: Role[]) => boolean;
 }
@@ -64,9 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }): ReactNode {
   );
 
   const register = useCallback(
-    async (data: RegisterData): Promise<void> => {
+    async (data: RegisterData): Promise<RegisterResponse> => {
       const response = await authApi.register(data);
-      await handleAuthResponse(response);
+      if ('tokens' in response) {
+        await handleAuthResponse(response);
+      }
+      return response;
     },
     [handleAuthResponse],
   );

@@ -23,6 +23,9 @@ export const usersApi = {
   blockUser: (id: string, block: boolean) =>
     api.patch<User>(`/users/${id}/block`, { block }).then((r) => r.data),
 
+  approveUser: (id: string) =>
+    api.patch<User>(`/users/${id}/approve`).then((r) => r.data),
+
   getPortfolio: (userId: string) =>
     api.get<StudentPortfolioItem[]>(`/users/${userId}/portfolio`).then((r) => r.data),
 

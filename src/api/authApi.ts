@@ -1,9 +1,9 @@
 import api from './axiosInstance';
-import type { AuthResponse, RegisterData, LoginData, TokenPair } from '../types';
+import type { AuthResponse, RegisterData, LoginData, RegisterResponse, TokenPair } from '../types';
 
 export const authApi = {
   register: (data: RegisterData) =>
-    api.post<AuthResponse>('/auth/register', data).then((r) => r.data),
+    api.post<RegisterResponse>('/auth/register', data).then((r) => r.data),
 
   login: (data: LoginData) =>
     api.post<AuthResponse>('/auth/login', data).then((r) => r.data),

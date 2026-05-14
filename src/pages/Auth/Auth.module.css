@@ -151,6 +151,17 @@
   margin-bottom: 0.5rem;
 }
 
+.success {
+  background: var(--success-muted);
+  border: 1px solid rgba(18, 128, 61, 0.2);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 0.75rem;
+  color: var(--success);
+  font-size: 0.8125rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
 /* ===== Footer ===== */
 .footer {
   text-align: center;

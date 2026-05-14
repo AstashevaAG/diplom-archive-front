@@ -2,7 +2,7 @@ import { useState, useEffect, type ReactNode, type SyntheticEvent } from 'react'
 import { Link } from 'react-router-dom';
 import { usersApi, topicRequestsApi } from '../../api';
 import { useAuth } from '../../hooks';
-import { Role, type User } from '../../types';
+import type { User } from '../../types';
 import styles from './Supervisors.module.css';
 
 function getInitials(name: string): string {
@@ -156,13 +156,11 @@ function SuccessBanner({ supervisorName, onClose }: SuccessBannerProps): ReactNo
 }
 
 export function SupervisorsPage(): ReactNode {
-  const { isAuthenticated, hasRole } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [supervisors, setSupervisors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedSupervisor, setSelectedSupervisor] = useState<User | null>(null);
   const [successSupervisor, setSuccessSupervisor] = useState('');
-
-  const canRequest = isAuthenticated && hasRole(Role.STUDENT);
 
   useEffect(() => {
     void usersApi

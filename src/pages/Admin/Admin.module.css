@@ -198,6 +198,11 @@
   font-size: 0.8125rem;
 }
 
+.statusPending {
+  color: var(--warning);
+  font-size: 0.8125rem;
+}
+
 /* ===== Actions ===== */
 .actionBtn {
   padding: 0.25rem 0.625rem;
@@ -224,6 +229,17 @@
   background: var(--danger-muted);
   color: var(--danger);
   border-color: rgba(180, 35, 24, 0.2);
+}
+
+.actionBtnApprove {
+  composes: actionBtn;
+  margin-right: 0.5rem;
+}
+
+.actionBtnApprove:hover {
+  background: var(--success-muted);
+  color: var(--success);
+  border-color: rgba(18, 128, 61, 0.2);
 }
 
 /* ===== Empty / Loading ===== */

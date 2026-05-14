@@ -1,36 +1,41 @@
-// === Enums (mirror Prisma enums) ===
+// === Enum-like constants (mirror Prisma enums) ===
 
-export enum Role {
-  GUEST = 'GUEST',
-  STUDENT = 'STUDENT',
-  GRADUATE = 'GRADUATE',
-  SUPERVISOR = 'SUPERVISOR',
-  ADMIN = 'ADMIN',
-}
+export const Role = {
+  GUEST: 'GUEST',
+  STUDENT: 'STUDENT',
+  GRADUATE: 'GRADUATE',
+  SUPERVISOR: 'SUPERVISOR',
+  ADMIN: 'ADMIN',
+} as const;
+export type Role = (typeof Role)[keyof typeof Role];
 
-export enum WorkStatus {
-  DRAFT = 'DRAFT',
-  TOPIC_SELECTED = 'TOPIC_SELECTED',
-  APPROVED = 'APPROVED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  REVIEW = 'REVIEW',
-  DEFENSE = 'DEFENSE',
-  PUBLISHED = 'PUBLISHED',
-  ARCHIVED = 'ARCHIVED',
-}
+export const WorkStatus = {
+  DRAFT: 'DRAFT',
+  TOPIC_SELECTED: 'TOPIC_SELECTED',
+  APPROVED: 'APPROVED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  REVIEW: 'REVIEW',
+  DEFENSE: 'DEFENSE',
+  PUBLISHED: 'PUBLISHED',
+  ARCHIVED: 'ARCHIVED',
+} as const;
+export type WorkStatus = (typeof WorkStatus)[keyof typeof WorkStatus];
 
-export enum FileType {
-  PDF = 'PDF',
-  PRESENTATION = 'PRESENTATION',
-  VIDEO = 'VIDEO',
-  OTHER = 'OTHER',
-}
+export const FileType = {
+  PDF: 'PDF',
+  PRESENTATION: 'PRESENTATION',
+  VIDEO: 'VIDEO',
+  OTHER: 'OTHER',
+} as const;
+export type FileType = (typeof FileType)[keyof typeof FileType];
 
-export enum TopicRequestStatus {
-  PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REJECTED = 'REJECTED',
-}
+export const TopicRequestStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+export type TopicRequestStatus =
+  (typeof TopicRequestStatus)[keyof typeof TopicRequestStatus];
 
 // === User ===
 
@@ -43,6 +48,7 @@ export interface User {
   specialization: string | null;
   bio: string | null;
   avatarUrl: string | null;
+  isApproved: boolean;
   isBlocked: boolean;
   createdAt: string;
   updatedAt: string;
@@ -64,6 +70,13 @@ export interface AuthResponse {
   };
   tokens: TokenPair;
 }
+
+export interface PendingRegistrationResponse {
+  requiresApproval: true;
+  message: string;
+}
+
+export type RegisterResponse = AuthResponse | PendingRegistrationResponse;
 
 export interface RegisterData {
   fullName: string;
@@ -144,18 +157,20 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export enum SortBy {
-  NEWEST = 'newest',
-  OLDEST = 'oldest',
-  SCORE_DESC = 'scoreDesc',
-  SCORE_ASC = 'scoreAsc',
-}
+export const SortBy = {
+  NEWEST: 'newest',
+  OLDEST: 'oldest',
+  SCORE_DESC: 'scoreDesc',
+  SCORE_ASC: 'scoreAsc',
+} as const;
+export type SortBy = (typeof SortBy)[keyof typeof SortBy];
 
-export enum StatusFilter {
-  PUBLISHED = 'published',
-  IN_PROGRESS = 'in_progress',
-  ALL = 'all',
-}
+export const StatusFilter = {
+  PUBLISHED: 'published',
+  IN_PROGRESS: 'in_progress',
+  ALL: 'all',
+} as const;
+export type StatusFilter = (typeof StatusFilter)[keyof typeof StatusFilter];
 
 export interface WorkQueryParams {
   category?: string;
@@ -281,12 +296,14 @@ export interface CreateTopicRequestData {
 
 // === Portfolio ===
 
-export enum PortfolioItemType {
-  COURSEWORK = 'COURSEWORK',
-  PERSONAL_PROJECT = 'PERSONAL_PROJECT',
-  RESEARCH_PAPER = 'RESEARCH_PAPER',
-  OTHER = 'OTHER',
-}
+export const PortfolioItemType = {
+  COURSEWORK: 'COURSEWORK',
+  PERSONAL_PROJECT: 'PERSONAL_PROJECT',
+  RESEARCH_PAPER: 'RESEARCH_PAPER',
+  OTHER: 'OTHER',
+} as const;
+export type PortfolioItemType =
+  (typeof PortfolioItemType)[keyof typeof PortfolioItemType];
 
 export const PORTFOLIO_TYPE_LABELS: Record<PortfolioItemType, string> = {
   [PortfolioItemType.COURSEWORK]: 'Курсовая работа',
@@ -328,11 +345,13 @@ export interface WorkMessage {
 
 // === Supervisor Topic ===
 
-export enum TopicResponseStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REJECTED = 'REJECTED',
-}
+export const TopicResponseStatus = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  REJECTED: 'REJECTED',
+} as const;
+export type TopicResponseStatus =
+  (typeof TopicResponseStatus)[keyof typeof TopicResponseStatus];
 
 export interface SupervisorTopic {
   id: string;

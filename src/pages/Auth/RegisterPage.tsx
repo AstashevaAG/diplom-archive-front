@@ -16,15 +16,27 @@ export function RegisterPage(): ReactNode {
     role: Role.STUDENT,
   });
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setIsSubmitting(true);
 
     try {
-      await register(formData);
+      const response = await register(formData);
+      if ('requiresApproval' in response) {
+        setSuccess(response.message);
+        setFormData({
+          fullName: '',
+          email: '',
+          password: '',
+          role: Role.STUDENT,
+        });
+        return;
+      }
       navigate('/dashboard');
     } catch (err: unknown) {
       if (err instanceof AxiosError) {
@@ -62,6 +74,7 @@ export function RegisterPage(): ReactNode {
         </div>
 
         {error && <div className={styles.error}>{error}</div>}
+        {success && <div className={styles.success}>{success}</div>}
 
         <form className={styles.form} onSubmit={(e) => void handleSubmit(e)}>
           <div className={styles.fieldGroup}>

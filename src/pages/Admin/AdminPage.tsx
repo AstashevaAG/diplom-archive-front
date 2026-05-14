@@ -54,6 +54,17 @@ export function AdminPage(): ReactNode {
     }
   };
 
+  const handleApprove = async (userId: string): Promise<void> => {
+    try {
+      await usersApi.approveUser(userId);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, isApproved: true } : u)),
+      );
+    } catch {
+      // ignore
+    }
+  };
+
   if (isLoading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
@@ -136,11 +147,30 @@ export function AdminPage(): ReactNode {
                     </span>
                   </td>
                   <td>
-                    <span className={user.isBlocked ? styles.statusBlocked : styles.statusActive}>
-                      {user.isBlocked ? 'Заблокирован' : 'Активен'}
+                    <span
+                      className={
+                        !user.isApproved
+                          ? styles.statusPending
+                          : user.isBlocked
+                            ? styles.statusBlocked
+                            : styles.statusActive
+                      }
+                    >
+                      {!user.isApproved
+                        ? 'Ожидает подтверждения'
+                        : user.isBlocked ? 'Заблокирован' : 'Активен'}
                     </span>
                   </td>
                   <td>
+                    {!user.isApproved && (
+                      <button
+                        type="button"
+                        className={styles.actionBtnApprove}
+                        onClick={() => void handleApprove(user.id)}
+                      >
+                        Одобрить
+                      </button>
+                    )}
                     <button
                       type="button"
                       className={user.isBlocked ? styles.actionBtn : styles.actionBtnDanger}

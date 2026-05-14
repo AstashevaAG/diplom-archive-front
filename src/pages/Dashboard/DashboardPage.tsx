@@ -321,7 +321,7 @@ function WorksTab({ isSupervisor }: WorksTabProps): ReactNode {
 
 function MessagesTab(): ReactNode {
   const [works, setWorks] = useState<Work[]>([]);
-  const { user, hasRole } = useAuth();
+  const { hasRole } = useAuth();
   const isSupervisor = hasRole(Role.SUPERVISOR);
   const [isLoading, setIsLoading] = useState(true);
 
