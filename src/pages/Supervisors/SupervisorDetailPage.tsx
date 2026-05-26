@@ -158,8 +158,8 @@ export function SupervisorDetailPage(): ReactNode {
                 <div className={styles.workMeta}>
                   <span>{work.author.fullName}</span>
                   {work.year && <span>{work.year}</span>}
-                  {work.qualityScore !== null && (
-                    <span className={styles.workScore}>{work.qualityScore}%</span>
+                  {work.commissionReviewScore !== null && (
+                    <span className={styles.workScore}>{work.commissionReviewScore}%</span>
                   )}
                 </div>
               </Link>

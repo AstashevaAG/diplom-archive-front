@@ -12,24 +12,25 @@
   font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 /* ===== Tabs ===== */
 .tabs {
   display: flex;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
+  gap: 0.25rem;
+  padding: 0.125rem;
+  background: transparent;
+  border: none;
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  box-shadow: none;
   margin-bottom: 1.5rem;
   width: fit-content;
 }
 
 .tab {
   padding: 0.5rem 1rem;
-  background: var(--bg-secondary);
+  background: transparent;
   color: var(--text-muted);
   border: none;
   font-size: 0.8125rem;
@@ -37,24 +38,27 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   text-decoration: none;
+  border-radius: var(--radius-md);
 }
 
 .tab:hover {
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
+  background: rgba(244, 250, 253, 0.92);
+  color: var(--text-primary);
 }
 
 .tabActive {
   composes: tab;
-  background: var(--bg-elevated);
+  background: var(--accent-subtle);
   color: var(--text-primary);
+  box-shadow: none;
 }
 
 /* ===== Profile Card ===== */
 .profileCard {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -73,6 +77,7 @@
   width: 56px;
   height: 56px;
   background: var(--accent-muted);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
   border-radius: var(--radius-xl);
   color: var(--accent-hover);
   font-weight: 700;
@@ -113,8 +118,8 @@
 
 .input {
   padding: 0.625rem 0.75rem;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -161,12 +166,16 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   font-family: inherit;
 }
 
 .btnPrimary:hover:not(:disabled) {
   background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.24);
 }
 
 .btnPrimary:disabled {
@@ -224,9 +233,10 @@
 }
 
 .portfolioForm {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -248,9 +258,18 @@
 
 .portfolioItem {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(168, 200, 218, 0.45);
   border-radius: var(--radius-lg);
   padding: 1rem 1.25rem;
+  box-shadow: none;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.portfolioItem:hover {
+  border-color: rgba(168, 200, 218, 0.75);
+  box-shadow: var(--shadow-sm);
 }
 
 .portfolioItemHeader {

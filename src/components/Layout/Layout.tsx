@@ -193,12 +193,12 @@ export function Layout({ children }: LayoutProps): ReactNode {
           {isAuthenticated && user ? (
             <div className={styles.userInfo}>
               <NotificationBell />
-              <div className={styles.userMeta}>
+              <Link to="/dashboard/profile" className={styles.userMeta} aria-label="Открыть профиль">
                 <div className={styles.userName}>{user.fullName}</div>
                 <div className={styles.userRole}>
                   {ROLE_LABELS[user.role] ?? user.role}
                 </div>
-              </div>
+              </Link>
               <button
                 type="button"
                 className={`${styles.btn} ${styles.btnGhost}`}
@@ -223,6 +223,12 @@ export function Layout({ children }: LayoutProps): ReactNode {
           )}
         </div>
       </header>
+
+      {isAuthenticated && (
+        <div className={styles.nativeNotifHost}>
+          <NotificationBell />
+        </div>
+      )}
 
       <main className={styles.main}>{children}</main>
 
@@ -279,7 +285,7 @@ export function Layout({ children }: LayoutProps): ReactNode {
               </NavLink>
             )}
 
-            <NavLink to="/dashboard" className={getMobileNavLinkClass}>
+            <NavLink to="/dashboard/profile" className={getMobileNavLinkClass}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M20 21a8 8 0 1 0-16 0" />
                 <circle cx="12" cy="7" r="4" />

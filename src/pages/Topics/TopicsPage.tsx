@@ -2,8 +2,91 @@ import { useState, useEffect, useMemo, type ReactNode, type KeyboardEvent } from
 import { Link } from 'react-router-dom';
 import { supervisorTopicsApi } from '../../api';
 import { useAuth } from '../../hooks';
-import { Role, TopicResponseStatus, type SupervisorTopic, type TopicResponse } from '../../types';
+import { Role, TopicResponseStatus, type SupervisorTopic, type TopicResponse, type TopicResponseMessage } from '../../types';
 import styles from './Topics.module.css';
+
+interface ResponseDiscussionProps {
+  response: TopicResponse;
+  onClose: () => void;
+}
+
+function ResponseDiscussion({ response, onClose }: ResponseDiscussionProps): ReactNode {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<TopicResponseMessage[]>([]);
+  const [text, setText] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const topicId = response.topicId;
+  const canWrite = response.status === TopicResponseStatus.PENDING;
+
+  useEffect(() => {
+    void supervisorTopicsApi.getResponseMessages(topicId, response.id)
+      .then(setMessages)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [topicId, response.id]);
+
+  const handleSend = async (): Promise<void> => {
+    if (!text.trim() || !canWrite) return;
+    setIsSending(true);
+    try {
+      const message = await supervisorTopicsApi.sendResponseMessage(topicId, response.id, text.trim());
+      setMessages((prev) => [...prev, message]);
+      setText('');
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  return (
+    <div className={styles.overlay} onClick={onClose}>
+      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <strong>Диалог по отклику</strong>
+          <button type="button" onClick={onClose} className={styles.modalClose}>×</button>
+        </div>
+        <div className={styles.modalBody}>
+          <div className={styles.modalTopicTitle}>{response.topic?.title ?? 'Тема'}</div>
+          {response.topic?.supervisor && (
+            <div className={styles.modalSupervisor}>Руководитель: {response.topic.supervisor.fullName}</div>
+          )}
+          <div className={styles.responseChat}>
+            {isLoading ? (
+              <div className={styles.empty}>Загрузка сообщений...</div>
+            ) : messages.length === 0 ? (
+              <div className={styles.chatEmpty}>Преподаватель сможет задать уточняющие вопросы перед принятием решения.</div>
+            ) : (
+              messages.map((message) => {
+                const mine = message.authorId === user?.id;
+                return (
+                  <div key={message.id} className={`${styles.chatMessage} ${mine ? styles.chatMessageMine : ''}`}>
+                    <div className={styles.chatAuthor}>{message.author.fullName}</div>
+                    <div className={styles.chatText}>{message.text}</div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+          {!canWrite && <div className={styles.chatLocked}>Отклик обработан. Дальше общение идёт в рабочем пространстве.</div>}
+          <textarea
+            className={styles.textarea}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Ответьте преподавателю"
+            disabled={!canWrite}
+            rows={3}
+          />
+        </div>
+        <div className={styles.modalFooter}>
+          <button type="button" className={styles.btnGhost} onClick={onClose}>Закрыть</button>
+          <button type="button" className={styles.btnPrimary} disabled={!text.trim() || isSending || !canWrite} onClick={() => void handleSend()}>
+            {isSending ? 'Отправка...' : 'Отправить'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function TopicsPage(): ReactNode {
   const { isAuthenticated, hasRole, user } = useAuth();
@@ -18,6 +101,7 @@ export function TopicsPage(): ReactNode {
   const [successId, setSuccessId] = useState<string | null>(null);
   const [viewTopic, setViewTopic] = useState<SupervisorTopic | null>(null);
   const [editTopic, setEditTopic] = useState<SupervisorTopic | null>(null);
+  const [discussion, setDiscussion] = useState<TopicResponse | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editArea, setEditArea] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -157,6 +241,39 @@ export function TopicsPage(): ReactNode {
         <div className={styles.loginHint}>
           <Link to="/login">Войдите</Link>, чтобы откликнуться на тему
         </div>
+      )}
+
+      {isStudent && myResponses.length > 0 && (
+        <section className={styles.myResponses}>
+          <div className={styles.myResponsesHeader}>
+            <h2>Мои отклики</h2>
+            <span>{myResponses.length}</span>
+          </div>
+          <div className={styles.myResponseList}>
+            {myResponses.map((response) => (
+              <div key={response.id} className={styles.myResponseCard}>
+                <div>
+                  <div className={styles.myResponseTitle}>{response.topic?.title ?? 'Тема'}</div>
+                  {response.topic?.supervisor && (
+                    <div className={styles.myResponseMeta}>{response.topic.supervisor.fullName}</div>
+                  )}
+                </div>
+                <div className={styles.myResponseActions}>
+                  <span className={`${styles.respondedBadge} ${
+                    response.status === TopicResponseStatus.ACCEPTED ? styles.accepted :
+                    response.status === TopicResponseStatus.REJECTED ? styles.rejected : ''
+                  }`}>
+                    {response.status === TopicResponseStatus.ACCEPTED ? 'Принят' :
+                     response.status === TopicResponseStatus.REJECTED ? 'Отклонён' : 'На обсуждении'}
+                  </span>
+                  <button type="button" className={styles.editMiniBtn} onClick={() => setDiscussion(response)}>
+                    Диалог
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {isLoading ? (
@@ -419,6 +536,9 @@ export function TopicsPage(): ReactNode {
             </div>
           </div>
         </div>
+      )}
+      {discussion && (
+        <ResponseDiscussion response={discussion} onClose={() => setDiscussion(null)} />
       )}
     </div>
   );

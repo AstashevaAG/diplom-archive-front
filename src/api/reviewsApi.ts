@@ -6,10 +6,19 @@ export const reviewsApi = {
     api.post<Review>(`/works/${workId}/reviews`, data).then((r) => r.data),
 
   getByWork: (workId: string) =>
-    api.get<Review[]>(`/works/${workId}/reviews`).then((r) => r.data),
+    api.get<Review[]>(`/works/${workId}/reviews`).then((r) =>
+      r.data.map((review) => ({
+        ...review,
+        reviewer: review.reviewer ?? null,
+        isCommissionReview: review.isCommissionReview ?? false,
+      })),
+    ),
 
   update: (reviewId: string, data: Partial<CreateReviewData>) =>
     api.patch<Review>(`/reviews/${reviewId}`, data).then((r) => r.data),
+
+  delete: (reviewId: string) =>
+    api.delete(`/reviews/${reviewId}`).then((r) => r.data),
 
   finalize: (reviewId: string) =>
     api.post<Review>(`/reviews/${reviewId}/finalize`).then((r) => r.data),

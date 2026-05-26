@@ -22,7 +22,7 @@
 }
 
 .backLink a:hover {
-  text-decoration: underline;
+  color: var(--accent-hover);
 }
 
 /* ===== Header ===== */
@@ -34,7 +34,7 @@
   font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   margin-bottom: 0.5rem;
 }
 
@@ -51,6 +51,7 @@
   padding: 0.125rem 0.5rem;
   background: var(--accent-muted);
   color: var(--accent-hover);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
   border-radius: var(--radius-sm);
   font-size: 0.6875rem;
   font-weight: 600;
@@ -59,10 +60,11 @@
 /* ===== Progress ===== */
 .progressSection {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .progressHeader {
@@ -87,7 +89,7 @@
 .progressBar {
   width: 100%;
   height: 6px;
-  background: var(--bg-hover);
+  background: rgba(215, 234, 244, 0.86);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 1.25rem;
@@ -151,6 +153,7 @@
   position: relative;
   z-index: 1;
   flex-shrink: 0;
+  box-shadow: 0 0 0 4px var(--bg-secondary);
 }
 
 .statusStep span {
@@ -175,9 +178,10 @@
 /* ===== Stages Panel ===== */
 .stagesPanel {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
   padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
 }
 
 .panelTitle {
@@ -204,7 +208,7 @@
 }
 
 .stageItem:hover {
-  background: var(--bg-hover);
+  background: rgba(244, 250, 253, 0.86);
 }
 
 .stageCheck {
@@ -235,7 +239,7 @@
 .statusUpdateSection {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(168, 200, 218, 0.62);
 }
 
 .statusUpdateTitle {
@@ -253,8 +257,8 @@
 .statusSelect {
   flex: 1;
   padding: 0.4375rem 0.625rem;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
   color: var(--text-secondary);
   font-size: 0.8125rem;
@@ -264,16 +268,17 @@
 /* ===== Chat Panel ===== */
 .chatPanel {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   height: 500px;
+  box-shadow: var(--shadow-sm);
 }
 
 .chatPanel .panelTitle {
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(168, 200, 218, 0.62);
   margin-bottom: 0;
 }
 
@@ -284,6 +289,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  background: linear-gradient(180deg, rgba(244, 250, 253, 0.42), rgba(255, 255, 255, 0));
 }
 
 .chatEmpty {
@@ -323,6 +329,7 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+  box-shadow: var(--shadow-sm);
 }
 
 .chatMsgMy .chatMsgText {
@@ -335,7 +342,54 @@
   background: var(--bg-elevated);
   color: var(--text-primary);
   border-bottom-left-radius: 4px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
+}
+
+.chatFileCard {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 100%;
+  padding: 0.5rem 0.625rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.chatFileCard:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.chatFileIcon {
+  flex-shrink: 0;
+}
+
+.chatFileInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.chatFileName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chatFileMeta {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
 }
 
 .chatMsgTime {
@@ -347,15 +401,52 @@
   display: flex;
   gap: 0.625rem;
   padding: 1rem 1.25rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(168, 200, 218, 0.62);
   align-items: flex-end;
+}
+
+.chatComposerMain {
+  flex: 1;
+  min-width: 0;
+}
+
+.attachedFilePreview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  background: var(--accent-muted);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.attachedFilePreview span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attachedFilePreview button {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .chatInput {
   flex: 1;
   padding: 0.625rem 0.75rem;
-  background: var(--bg-primary);
-  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -363,11 +454,14 @@
   outline: none;
   font-family: inherit;
   line-height: 1.5;
-  transition: border-color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .chatInput:focus {
   border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .btnSend {
@@ -379,16 +473,46 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   font-family: inherit;
   white-space: nowrap;
 }
 
 .btnSend:hover:not(:disabled) {
   background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.24);
 }
 
 .btnSend:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnAttach {
+  padding: 0.5rem 0.875rem;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btnAttach:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-muted);
+  box-shadow: var(--shadow-sm);
+}
+
+.btnAttach:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -453,8 +577,11 @@
 
 .workMetaBlock {
   margin-bottom: 1.5rem;
-  padding: 0 0 1.25rem;
-  border-bottom: 1px solid var(--border);
+  padding: 1.25rem;
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow: var(--shadow-sm);
 }
 
 .textBlock {
@@ -490,7 +617,7 @@
 .filesSection {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(168, 200, 218, 0.62);
 }
 
 .filesSectionTitle {
@@ -520,7 +647,7 @@
   gap: 0.625rem;
   padding: 0.75rem 0.875rem 0.75rem 1rem;
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-lg);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   text-decoration: none;
@@ -548,8 +675,6 @@
 .fileItem:hover {
   background: var(--bg-elevated);
   border-color: var(--accent);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-  transform: translateY(-1px);
 }
 
 .fileItemBtn {
@@ -603,8 +728,25 @@
   color: var(--text-muted);
   padding: 0.15rem 0.4rem;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
+}
+
+.fileDetails {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.fileComment {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .fileOpenHint {
@@ -664,6 +806,159 @@
   cursor: not-allowed;
 }
 
+.versionEmpty {
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px dashed var(--surface-line);
+  border-radius: var(--radius-lg);
+}
+
+.versionCommentInput {
+  width: 100%;
+  min-height: 68px;
+  padding: 0.625rem 0.75rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  resize: vertical;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.versionCommentInput:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+
+.versionCompare {
+  padding-top: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.versionCompareTitle {
+  margin: 0 0 0.625rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.versionCompareControls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+}
+
+.versionSelect {
+  min-width: 0;
+  padding: 0.4375rem 0.625rem;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+
+.versionDiff {
+  padding: 0.875rem;
+  margin-top: 0.875rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--surface-line);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-lg);
+}
+
+.versionDiffSummary {
+  margin-bottom: 0.625rem;
+  color: var(--text-primary);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.metadataDiffList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.metadataDiffItem {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.5rem;
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.metadataDiffItem strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.metadataDiffChanged strong {
+  color: var(--accent);
+}
+
+.textDiffBlock {
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.textDiffStats {
+  margin-bottom: 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.textDiffList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.diffAdded,
+.diffRemoved {
+  padding: 0.375rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  border-radius: var(--radius-sm);
+}
+
+.diffAdded {
+  color: var(--success);
+  background: var(--success-muted);
+}
+
+.diffRemoved {
+  color: var(--danger);
+  background: var(--danger-muted);
+}
+
+.textDiffUnavailable {
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+}
+
 @media (max-width: 900px) {
   .content {
     grid-template-columns: 1fr;
@@ -671,5 +966,27 @@
 
   .chatPanel {
     height: 400px;
+  }
+
+  .chatForm {
+    flex-wrap: wrap;
+  }
+
+  .chatComposerMain {
+    flex-basis: 100%;
+  }
+
+  .btnAttach,
+  .btnSend {
+    flex: 1;
+  }
+
+  .versionCompareControls {
+    grid-template-columns: 1fr;
+  }
+
+  .metadataDiffItem {
+    grid-template-columns: 1fr;
+    gap: 0.125rem;
   }
 }

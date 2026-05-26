@@ -4,7 +4,7 @@ import { worksApi, commentsApi, stagesApi, reviewsApi, reviewCriteriaApi, filesA
 import { useAuth } from '../../hooks';
 import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewModal';
 import { WorkMetaEditor } from '../../components/WorkMetaEditor/WorkMetaEditor';
-import { Role, type Work, type WorkFile, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
+import { Role, WorkStatus, type Work, type WorkFile, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
 import { WORK_STATUS_LABELS, formatDateTime } from '../../utils/constants';
 import styles from './WorkDetailPage.module.css';
 
@@ -50,6 +50,21 @@ function getScoreClass(score: number | null): string {
 
 function getInitials(name: string): string {
   return name.split(' ').slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+}
+
+function formatBytes(size?: number): string {
+  if (!size || size <= 0) return 'размер не указан';
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} КБ`;
+  return `${(size / 1024 / 1024).toFixed(1)} МБ`;
+}
+
+function sortFileVersions(files?: WorkFile[]): WorkFile[] {
+  return [...(files ?? [])].sort((a, b) => {
+    const byVersion = (b.version ?? 0) - (a.version ?? 0);
+    if (byVersion !== 0) return byVersion;
+    return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+  });
 }
 
 // ===== Work Stages Component =====
@@ -260,9 +275,11 @@ function CommentsSection({ workId }: CommentsProps): ReactNode {
 interface ReviewSectionProps {
   workId: string;
   isSupervisor: boolean;
+  currentUser: { id: string; role: Role } | null;
+  onWorkUpdated: (work: Work) => void;
 }
 
-function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode {
+function ReviewSection({ workId, isSupervisor, currentUser, onWorkUpdated }: ReviewSectionProps): ReactNode {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [criteria, setCriteria] = useState<ReviewCriteriaConfig[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -270,6 +287,9 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
   const [scores, setScores] = useState<Record<string, number>>({});
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingReview, setEditingReview] = useState<Review | null>(null);
+  const [reviewToDelete, setReviewToDelete] = useState<Review | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     void Promise.all([
@@ -283,6 +303,54 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
       setScores(initScores);
     }).catch(() => {}).finally(() => setIsLoading(false));
   }, [workId]);
+
+  const refreshReviewData = async (): Promise<void> => {
+    const [updatedReviews, updatedWork] = await Promise.all([
+      reviewsApi.getByWork(workId),
+      worksApi.getById(workId),
+    ]);
+    setReviews(updatedReviews);
+    onWorkUpdated(updatedWork);
+  };
+
+  const buildReviewPayload = (): { criteria: Record<string, number>; weights: Record<string, number>; comment?: string } => {
+    const criteriaObj: Record<string, number> = {};
+    const weightsObj: Record<string, number> = {};
+    criteria.forEach((c) => {
+      criteriaObj[c.id] = scores[c.id] ?? 5;
+      weightsObj[c.id] = c.weight;
+    });
+    return {
+      criteria: criteriaObj,
+      weights: weightsObj,
+      comment: comment.trim() || undefined,
+    };
+  };
+
+  const resetReviewForm = (): void => {
+    const initScores: Record<string, number> = {};
+    criteria.forEach((c) => { initScores[c.id] = 5; });
+    setScores(initScores);
+    setComment('');
+    setEditingReview(null);
+    setShowForm(false);
+  };
+
+  const startCreateReview = (): void => {
+    resetReviewForm();
+    setShowForm(true);
+  };
+
+  const startEditReview = (review: Review): void => {
+    const editScores: Record<string, number> = {};
+    criteria.forEach((c) => {
+      editScores[c.id] = review.criteria[c.id] ?? 5;
+    });
+    setScores(editScores);
+    setComment(review.comment ?? '');
+    setEditingReview(review);
+    setShowForm(true);
+  };
 
   const totalScore = (): number => {
     let weightedSum = 0;
@@ -299,24 +367,31 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
   const handleSubmitReview = async (): Promise<void> => {
     setIsSubmitting(true);
     try {
-      const criteriaObj: Record<string, number> = {};
-      const weightsObj: Record<string, number> = {};
-      criteria.forEach((c) => {
-        criteriaObj[c.id] = scores[c.id] ?? 5;
-        weightsObj[c.id] = c.weight;
-      });
-      const review = await reviewsApi.create(workId, {
-        criteria: criteriaObj,
-        weights: weightsObj,
-        comment: comment.trim() || undefined,
-      });
-      setReviews((prev) => [review, ...prev]);
-      setShowForm(false);
-      setComment('');
+      if (editingReview) {
+        await reviewsApi.update(editingReview.id, buildReviewPayload());
+      } else {
+        await reviewsApi.create(workId, buildReviewPayload());
+      }
+      await refreshReviewData();
+      resetReviewForm();
     } catch {
       // ignore
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteReview = async (): Promise<void> => {
+    if (!reviewToDelete) return;
+    setIsDeleting(true);
+    try {
+      await reviewsApi.delete(reviewToDelete.id);
+      await refreshReviewData();
+      setReviewToDelete(null);
+    } catch {
+      // ignore
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -327,7 +402,7 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         <h2 className={styles.sectionTitle}>Рецензии ({reviews.length})</h2>
         {isSupervisor && !showForm && (
-          <button type="button" onClick={() => setShowForm(true)}
+          <button type="button" onClick={startCreateReview}
             style={{ padding: '0.375rem 0.875rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
             Добавить рецензию
           </button>
@@ -337,7 +412,7 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
       {showForm && (
         <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', marginBottom: '1.25rem' }}>
           <div style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)', marginBottom: '1rem' }}>
-            Оценка работы
+            {editingReview ? 'Редактирование рецензии' : 'Оценка работы'}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1rem' }}>
             {criteria.map((c) => (
@@ -383,9 +458,9 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <button type="button" disabled={isSubmitting} onClick={() => void handleSubmitReview()}
               style={{ padding: '0.5rem 1.25rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: isSubmitting ? 0.5 : 1 }}>
-              {isSubmitting ? 'Отправка...' : 'Сохранить рецензию'}
+              {isSubmitting ? 'Сохранение...' : 'Сохранить рецензию'}
             </button>
-            <button type="button" onClick={() => setShowForm(false)}
+            <button type="button" onClick={resetReviewForm}
               style={{ padding: '0.5rem 1.25rem', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', fontSize: '0.875rem', cursor: 'pointer', color: 'var(--text-secondary)', fontFamily: 'inherit' }}>
               Отмена
             </button>
@@ -399,16 +474,43 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
         </div>
       )}
 
+      {reviews.some((r) => r.isCommissionReview) && (
+        <div style={{ marginBottom: '0.75rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+          Рецензия комиссии показывается отдельно от внешних рецензий.
+        </div>
+      )}
+
       {reviews.map((r) => (
         <div key={r.id} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1rem 1.25rem', marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {r.reviewer?.fullName ?? 'Рецензент'}
-            </span>
-            <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent)' }}>
-              {r.totalScore}%
-            </span>
+            <div>
+              <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                {r.reviewer?.fullName ?? 'Рецензент'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              {currentUser?.id === r.reviewerId && (
+                <button type="button" onClick={() => startEditReview(r)}
+                  style={{ padding: '0.25rem 0.5rem', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text-secondary)', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Редактировать
+                </button>
+              )}
+              {(currentUser?.id === r.reviewerId || currentUser?.role === Role.ADMIN) && (
+                <button type="button" onClick={() => setReviewToDelete(r)}
+                  style={{ padding: '0.25rem 0.5rem', background: 'none', border: '1px solid var(--danger)', borderRadius: 'var(--radius-sm)', color: 'var(--danger)', fontSize: '0.75rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                  Удалить
+                </button>
+              )}
+              <span style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--accent)' }}>
+                {r.totalScore}%
+              </span>
+            </div>
           </div>
+          {r.isCommissionReview && (
+            <div style={{ marginBottom: '0.375rem', fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 600 }}>
+              Рецензия комиссии
+            </div>
+          )}
           {r.comment && (
             <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{r.comment}</div>
           )}
@@ -417,6 +519,29 @@ function ReviewSection({ workId, isSupervisor }: ReviewSectionProps): ReactNode 
           )}
         </div>
       ))}
+
+      {reviewToDelete && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(0, 0, 0, 0.45)' }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="delete-review-title" style={{ width: '100%', maxWidth: '420px', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', padding: '1.25rem', boxShadow: '0 24px 60px rgba(0, 0, 0, 0.25)' }}>
+            <h3 id="delete-review-title" style={{ margin: 0, marginBottom: '0.75rem', fontSize: '1rem', color: 'var(--text-primary)' }}>
+              Точно ли Вы хотите удалить?
+            </h3>
+            <p style={{ margin: 0, marginBottom: '1.25rem', color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.5 }}>
+              Рецензия будет удалена, а средний балл пересчитается сразу.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button type="button" disabled={isDeleting} onClick={() => setReviewToDelete(null)}
+                style={{ padding: '0.5rem 1rem', background: 'none', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-secondary)', fontSize: '0.875rem', cursor: 'pointer', fontFamily: 'inherit' }}>
+                Отмена
+              </button>
+              <button type="button" disabled={isDeleting} onClick={() => void handleDeleteReview()}
+                style={{ padding: '0.5rem 1rem', background: 'var(--danger)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', color: 'white', fontSize: '0.875rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: isDeleting ? 0.6 : 1 }}>
+                {isDeleting ? 'Удаление...' : 'Удалить'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -466,15 +591,25 @@ export function WorkDetailPage(): ReactNode {
     );
   }
 
-  const canEditStages =
-    isAuthenticated &&
-    user !== null &&
-    (user.id === work.authorId || user.id === work.supervisorId || user.role === Role.ADMIN);
-
+  const isPublished = work.status === WorkStatus.PUBLISHED;
   const isParticipant =
     isAuthenticated &&
     user !== null &&
     (user.id === work.authorId || user.id === work.supervisorId);
+  const fileVersions = sortFileVersions(work.files);
+  const canEditWorkInfo =
+    isAuthenticated &&
+    user !== null &&
+    (
+      user.role === Role.ADMIN ||
+      (user.role === Role.SUPERVISOR && user.id === work.supervisorId)
+    );
+  const canEditStages =
+    !isPublished &&
+    isAuthenticated &&
+    user !== null &&
+    (user.id === work.authorId || user.id === work.supervisorId || user.role === Role.ADMIN);
+  const canViewStages = !isPublished && (isParticipant || canEditStages);
 
   const handleFileUpload = async (file: File): Promise<void> => {
     if (!id) return;
@@ -565,7 +700,7 @@ export function WorkDetailPage(): ReactNode {
         )}
       </div>
 
-      {isParticipant && (
+      {canEditWorkInfo && (
         <WorkMetaEditor work={work} onSaved={(w) => setWork(w)} />
       )}
 
@@ -576,10 +711,16 @@ export function WorkDetailPage(): ReactNode {
           <span className={styles.statLabel}>Просмотров</span>
         </div>
         <div className={styles.stat}>
-          <span className={`${styles.statValue} ${getScoreClass(work.qualityScore)}`}>
-            {work.qualityScore !== null ? `${String(work.qualityScore)}%` : '—'}
+          <span className={`${styles.statValue} ${getScoreClass(work.commissionReviewScore)}`}>
+            {work.commissionReviewScore !== null ? `${String(work.commissionReviewScore)}%` : '—'}
           </span>
-          <span className={styles.statLabel}>Оценка</span>
+          <span className={styles.statLabel}>Комиссия</span>
+        </div>
+        <div className={styles.stat}>
+          <span className={`${styles.statValue} ${getScoreClass(work.externalReviewScore)}`}>
+            {work.externalReviewScore !== null ? `${String(work.externalReviewScore)}%` : '—'}
+          </span>
+          <span className={styles.statLabel}>Внешние</span>
         </div>
         <div className={styles.stat}>
           <span className={styles.statValue}>{String(work._count?.reviews ?? 0)}</span>
@@ -598,13 +739,13 @@ export function WorkDetailPage(): ReactNode {
         </div>
       )}
 
-      {(work.annotation?.trim() || isParticipant) && (
+      {(work.annotation?.trim() || canEditWorkInfo) && (
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Аннотация</h2>
           {work.annotation?.trim() ? (
             <p className={styles.annotation}>{work.annotation}</p>
           ) : (
-            isParticipant && (
+            canEditWorkInfo && (
               <p className={styles.annotationMuted}>Аннотация пока не заполнена — добавьте её в блоке редактирования выше.</p>
             )
           )}
@@ -614,11 +755,11 @@ export function WorkDetailPage(): ReactNode {
       {/* Files */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          Файлы ({String(work.files?.length ?? 0)})
+          Версии файлов ({String(fileVersions.length)})
         </h2>
-        {work.files && work.files.length > 0 ? (
+        {fileVersions.length > 0 ? (
           <div className={styles.filesList}>
-            {work.files.map((file) => (
+            {fileVersions.map((file) => (
               <button
                 key={file.id}
                 type="button"
@@ -630,7 +771,15 @@ export function WorkDetailPage(): ReactNode {
                   <FileIcon type={file.type} />
                 </span>
                 <div className={styles.fileInfo}>
-                  <div className={styles.fileName}>{file.originalName}</div>
+                  <div className={styles.fileName}>
+                    v{String(file.version ?? 1)} · {file.originalName}
+                  </div>
+                  <span className={styles.fileVersionMeta}>
+                    {file.createdAt ? formatDateTime(file.createdAt) : 'дата не указана'} · {formatBytes(file.size)}
+                  </span>
+                  {file.comment && (
+                    <span className={styles.fileVersionComment}>{file.comment}</span>
+                  )}
                   <span className={styles.fileTypeBadge}>{file.type}</span>
                 </div>
                 <span className={styles.fileAction}>
@@ -668,8 +817,8 @@ export function WorkDetailPage(): ReactNode {
         )}
       </div>
 
-      {/* Stages — only for participants */}
-      {(isParticipant || canEditStages) && id && (
+      {/* Stages are part of the in-progress workspace and are hidden after publication. */}
+      {canViewStages && id && (
         <WorkStagesSection workId={id} canEdit={canEditStages} />
       )}
 
@@ -678,6 +827,8 @@ export function WorkDetailPage(): ReactNode {
         <ReviewSection
           workId={id}
           isSupervisor={isAuthenticated && user?.role === Role.SUPERVISOR}
+          currentUser={user ? { id: user.id, role: user.role } : null}
+          onWorkUpdated={setWork}
         />
       )}
 

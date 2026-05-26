@@ -5,6 +5,10 @@
 }
 
 .header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 1.5rem;
 }
 
@@ -12,7 +16,7 @@
   font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .subtitle {
@@ -21,15 +25,61 @@
   margin-top: 0.25rem;
 }
 
+.reportActions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.reportBtn {
+  padding: 0.5rem 0.875rem;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.reportBtn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.reportBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.reportBtnPrimary {
+  composes: reportBtn;
+  color: white;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.reportBtnPrimary:hover:not(:disabled) {
+  color: white;
+  background: var(--accent-hover);
+}
+
 /* ===== Stats ===== */
 .statsRow {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
+  gap: 0.875rem;
   margin-bottom: 1.5rem;
 }
 
@@ -38,13 +88,24 @@
   flex-direction: column;
   padding: 1.25rem;
   background: var(--bg-secondary);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.stat:hover {
+  background: var(--bg-elevated);
 }
 
 .statValue {
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.03em;
+  letter-spacing: 0;
   line-height: 1;
   margin-bottom: 0.25rem;
 }
@@ -66,8 +127,8 @@
 .searchInput {
   width: 100%;
   padding: 0.625rem 1rem 0.625rem 2.5rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-lg);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -103,8 +164,9 @@
 /* ===== Table ===== */
 .tableSection {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
 }
 
@@ -138,7 +200,7 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   border-bottom: 1px solid var(--border);
-  background: var(--bg-elevated);
+  background: rgba(244, 250, 253, 0.88);
 }
 
 .table td {
@@ -153,7 +215,7 @@
 }
 
 .table tr:hover td {
-  background: var(--bg-elevated);
+  background: rgba(244, 250, 253, 0.72);
 }
 
 /* ===== Badges ===== */
@@ -162,6 +224,7 @@
   border-radius: var(--radius-sm);
   font-size: 0.6875rem;
   font-weight: 600;
+  border: 1px solid rgba(168, 200, 218, 0.5);
 }
 
 .roleAdmin {
@@ -207,7 +270,7 @@
 .actionBtn {
   padding: 0.25rem 0.625rem;
   background: var(--bg-hover);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-sm);
   color: var(--text-muted);
   font-size: 0.6875rem;
@@ -217,7 +280,7 @@
 }
 
 .actionBtn:hover {
-  background: var(--bg-active);
+  background: var(--bg-elevated);
   color: var(--text-primary);
 }
 
@@ -258,6 +321,14 @@
 }
 
 @media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+  }
+
+  .reportActions {
+    justify-content: flex-start;
+  }
+
   .statsRow {
     grid-template-columns: repeat(2, 1fr);
   }

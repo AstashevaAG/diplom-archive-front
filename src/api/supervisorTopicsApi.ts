@@ -1,5 +1,5 @@
 import api from './axiosInstance';
-import type { SupervisorTopic, TopicResponse, ReviewCriteriaConfig } from '../types';
+import type { SupervisorTopic, TopicResponse, TopicResponseMessage, ReviewCriteriaConfig } from '../types';
 
 export const supervisorTopicsApi = {
   create: (data: { title: string; description?: string; area?: string }) =>
@@ -31,6 +31,12 @@ export const supervisorTopicsApi = {
 
   rejectResponse: (topicId: string, responseId: string) =>
     api.patch<TopicResponse>(`/supervisor-topics/${topicId}/responses/${responseId}/reject`).then((r) => r.data),
+
+  getResponseMessages: (topicId: string, responseId: string) =>
+    api.get<TopicResponseMessage[]>(`/supervisor-topics/${topicId}/responses/${responseId}/messages`).then((r) => r.data),
+
+  sendResponseMessage: (topicId: string, responseId: string, text: string) =>
+    api.post<TopicResponseMessage>(`/supervisor-topics/${topicId}/responses/${responseId}/messages`, { text }).then((r) => r.data),
 };
 
 export const reviewCriteriaApi = {

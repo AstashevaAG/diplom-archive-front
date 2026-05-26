@@ -19,17 +19,19 @@
   font-size: 0.875rem;
   color: var(--accent);
   text-decoration: none;
+  font-weight: 600;
 }
 
 .backLink a:hover {
-  text-decoration: underline;
+  color: var(--accent-hover);
 }
 
 /* ===== Profile Card ===== */
 .profileCard {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   padding: 1.75rem;
   margin-bottom: 2rem;
 }
@@ -48,6 +50,7 @@
   width: 72px;
   height: 72px;
   background: var(--accent-muted);
+  border: 1px solid rgba(var(--accent-rgb), 0.18);
   border-radius: var(--radius-xl);
   color: var(--accent-hover);
   font-weight: 700;
@@ -63,7 +66,7 @@
   font-size: 1.375rem;
   font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
   margin-bottom: 0.25rem;
 }
 
@@ -97,13 +100,17 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   font-family: inherit;
   white-space: nowrap;
 }
 
 .requestBtn:hover {
   background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.24);
 }
 
 /* ===== Sections ===== */
@@ -149,9 +156,18 @@
 
 .topicCard {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.topicCard:hover {
+  background: var(--bg-elevated);
 }
 
 .topicTitle {
@@ -197,19 +213,22 @@
 .worksGrid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
+  gap: 0.875rem;
 }
 
 .workCard {
   padding: 1.25rem;
   background: var(--bg-secondary);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
   text-decoration: none;
   display: block;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .workCard:hover {
@@ -261,8 +280,9 @@
 
 .modal {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
   width: 100%;
   max-width: 480px;
   overflow: hidden;
@@ -327,16 +347,19 @@
 .input {
   padding: 0.625rem 0.75rem;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 0.875rem;
   outline: none;
-  transition: border-color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .input:focus {
   border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
 }
 
 .textarea {
@@ -357,11 +380,15 @@
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .btnPrimary:hover:not(:disabled) {
   background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.24);
 }
 
 .btnPrimary:disabled {
@@ -383,5 +410,5 @@
 }
 
 .btnGhost:hover {
-  background: var(--bg-hover);
+  background: var(--bg-elevated);
 }

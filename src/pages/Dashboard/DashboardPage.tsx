@@ -12,6 +12,7 @@ import {
   type TopicRequest,
   type SupervisorTopic,
   type TopicResponse,
+  type TopicResponseMessage,
   type StudentPortfolioItem,
   type CreatePortfolioItemData,
 } from '../../types';
@@ -296,7 +297,7 @@ function WorksTab({ isSupervisor }: WorksTabProps): ReactNode {
                 <div className={styles.cardMeta}>
                   <span className={styles.badge}>{WORK_STATUS_LABELS[work.status] ?? work.status}</span>
                   {isSupervisor && <span>{work.author.fullName}</span>}
-                  {work.qualityScore !== null && <span>{String(work.qualityScore)}%</span>}
+                  {work.commissionReviewScore !== null && <span>{String(work.commissionReviewScore)}%</span>}
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', flexWrap: 'wrap' }}>
                   <Link to={workspaceLink} className={styles.addBtn} style={{ fontSize: '0.75rem', padding: '0.25rem 0.625rem' }}>
@@ -370,115 +371,94 @@ function MessagesTab(): ReactNode {
   );
 }
 
-// ===== Student Topics Tab =====
+// ===== Supervisor: My Topics Tab =====
 
-function StudentTopicsTab(): ReactNode {
-  const [topics, setTopics] = useState<SupervisorTopic[]>([]);
-  const [myResponses, setMyResponses] = useState<TopicResponse[]>([]);
+interface ResponseDiscussionProps {
+  topicId: string;
+  response: TopicResponse;
+  onClose: () => void;
+}
+
+function ResponseDiscussion({ topicId, response, onClose }: ResponseDiscussionProps): ReactNode {
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<TopicResponseMessage[]>([]);
+  const [text, setText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [respondingTo, setRespondingTo] = useState<SupervisorTopic | null>(null);
-  const [responseMessage, setResponseMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
-    void Promise.all([supervisorTopicsApi.getAll(), supervisorTopicsApi.getMyResponses()])
-      .then(([t, r]) => { setTopics(t); setMyResponses(r); })
-      .catch(() => {}).finally(() => setIsLoading(false));
-  }, []);
+    void supervisorTopicsApi.getResponseMessages(topicId, response.id)
+      .then(setMessages)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [topicId, response.id]);
 
-  const respondedIds = new Set(myResponses.map((r) => r.topicId));
+  const canWrite = response.status === TopicResponseStatus.PENDING;
 
-  const handleRespond = async (): Promise<void> => {
-    if (!respondingTo) return;
-    setIsSubmitting(true);
+  const handleSend = async (): Promise<void> => {
+    if (!text.trim() || !canWrite) return;
+    setIsSending(true);
     try {
-      const res = await supervisorTopicsApi.respond(respondingTo.id, responseMessage.trim() || undefined);
-      setMyResponses((prev) => [...prev, res]);
-      setRespondingTo(null);
-      setResponseMessage('');
-    } catch {
-      // ignore
+      const message = await supervisorTopicsApi.sendResponseMessage(topicId, response.id, text.trim());
+      setMessages((prev) => [...prev, message]);
+      setText('');
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
     }
   };
 
-  if (isLoading) return <div className={styles.empty}>Загрузка...</div>;
-
   return (
-    <div>
-      <div className={styles.sectionHeader}>
-        <h2 className={styles.sectionTitle}>Темы от преподавателей</h2>
-        <Link to="/topics" className={styles.addBtn}>Все темы</Link>
-      </div>
-      {myResponses.length > 0 && (
-        <div style={{ marginBottom: '1.5rem' }}>
-          <div className={styles.inboxSectionLabel} style={{ marginBottom: '0.625rem' }}>Мои отклики</div>
-          <div className={styles.requestList}>
-            {myResponses.map((r) => (
-              <div key={r.id} className={styles.requestCard}>
-                <div className={styles.requestTop}>
-                  <div className={styles.requestTopic}>{r.topic?.title ?? '...'}</div>
-                  <span className={`${styles.requestStatus} ${r.status === TopicResponseStatus.ACCEPTED ? styles.statusApproved : r.status === TopicResponseStatus.REJECTED ? styles.statusRejected : styles.statusPending}`}>
-                    {r.status === TopicResponseStatus.ACCEPTED ? 'Принят' : r.status === TopicResponseStatus.REJECTED ? 'Отклонён' : 'Ожидает'}
-                  </span>
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.discussionModal} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.discussionHeader}>
+          <div>
+            <div className={styles.discussionTitle}>Обсуждение отклика</div>
+            <div className={styles.discussionMeta}>
+              {response.student?.fullName ?? 'Студент'}{response.student?.group ? ` · ${response.student.group}` : ''}
+            </div>
+          </div>
+          <button type="button" className={styles.modalClose} onClick={onClose}>×</button>
+        </div>
+        <div className={styles.discussionBody}>
+          {isLoading ? (
+            <div className={styles.empty}>Загрузка сообщений...</div>
+          ) : messages.length === 0 ? (
+            <div className={styles.discussionEmpty}>
+              Задайте уточняющий вопрос перед принятием решения. Переписка сохранится в рабочем пространстве, если вы примете отклик.
+            </div>
+          ) : (
+            messages.map((message) => {
+              const mine = message.authorId === user?.id;
+              return (
+                <div key={message.id} className={`${styles.chatMessage} ${mine ? styles.chatMessageMine : ''}`}>
+                  <div className={styles.chatAuthor}>{message.author.fullName}</div>
+                  <div className={styles.chatText}>{message.text}</div>
+                  <div className={styles.chatDate}>{formatDate(message.createdAt)}</div>
                 </div>
-                {r.topic?.supervisor && <div className={styles.requestMeta}>{r.topic.supervisor.fullName}</div>}
-                <div className={styles.requestDate}>{formatDate(r.createdAt)}</div>
-              </div>
-            ))}
-          </div>
+              );
+            })
+          )}
         </div>
-      )}
-      {topics.length === 0 ? (
-        <div className={styles.empty}><div className={styles.emptyText}>Преподаватели ещё не предлагали темы</div></div>
-      ) : (
-        <div className={styles.grid}>
-          {topics.map((topic) => {
-            const responded = respondedIds.has(topic.id);
-            return (
-              <div key={topic.id} className={styles.card} style={{ cursor: 'default' }}>
-                <div className={styles.cardTitle}>{topic.title}</div>
-                {topic.area && <div style={{ fontSize: '0.75rem', color: 'var(--accent)', fontWeight: 500, marginBottom: '0.375rem' }}>{topic.area}</div>}
-                {topic.description && <div className={styles.cardAnnotation}>{topic.description}</div>}
-                <div className={styles.cardMeta}>{topic.supervisor && <span>{topic.supervisor.fullName}</span>}</div>
-                {!responded ? (
-                  <button type="button" style={{ marginTop: '0.75rem', padding: '0.375rem 0.875rem', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontSize: '0.8125rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
-                    onClick={() => { setRespondingTo(topic); }}>
-                    Откликнуться
-                  </button>
-                ) : (
-                  <div style={{ marginTop: '0.75rem', fontSize: '0.8125rem', color: 'var(--success)', fontWeight: 500 }}>Вы откликнулись</div>
-                )}
-              </div>
-            );
-          })}
+        <div className={styles.discussionComposer}>
+          {!canWrite && (
+            <div className={styles.discussionLocked}>Отклик уже обработан. Продолжайте общение в рабочем пространстве.</div>
+          )}
+          <textarea
+            className={styles.discussionTextarea}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Напишите вопрос студенту о теме, сроках или формате работы"
+            disabled={!canWrite}
+            rows={3}
+          />
+          <button type="button" className={styles.btnApprove} disabled={!text.trim() || isSending || !canWrite} onClick={() => void handleSend()}>
+            {isSending ? 'Отправка...' : 'Отправить'}
+          </button>
         </div>
-      )}
-      {respondingTo && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '1rem' }} onClick={() => setRespondingTo(null)}>
-          <div style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-xl)', width: '100%', maxWidth: '480px', overflow: 'hidden' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between' }}>
-              <strong style={{ color: 'var(--text-primary)' }}>Отклик на тему</strong>
-              <button type="button" onClick={() => setRespondingTo(null)} style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: 'var(--text-muted)' }}>×</button>
-            </div>
-            <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{respondingTo.title}</div>
-              <textarea style={{ padding: '0.625rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.875rem', minHeight: '80px', resize: 'vertical', outline: 'none', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' }}
-                placeholder="Сопроводительное сообщение (необязательно)" value={responseMessage} onChange={(e) => setResponseMessage(e.target.value)} />
-            </div>
-            <div style={{ padding: '1rem 1.25rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-              <button type="button" onClick={() => setRespondingTo(null)} className={styles.btnGhost}>Отмена</button>
-              <button type="button" disabled={isSubmitting} className={styles.btnApprove} onClick={() => void handleRespond()}>{isSubmitting ? 'Отправка...' : 'Откликнуться'}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
-
-// ===== Supervisor: My Topics Tab =====
 
 function SupervisorTopicsTab(): ReactNode {
   const [topics, setTopics] = useState<SupervisorTopic[]>([]);
@@ -490,6 +470,7 @@ function SupervisorTopicsTab(): ReactNode {
   const [isCreating, setIsCreating] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [topicResponses, setTopicResponses] = useState<Record<string, TopicResponse[]>>({});
+  const [discussion, setDiscussion] = useState<{ topicId: string; response: TopicResponse } | null>(null);
 
   useEffect(() => {
     void supervisorTopicsApi.getMy().then(setTopics).catch(() => {}).finally(() => setIsLoading(false));
@@ -583,11 +564,22 @@ function SupervisorTopicsTab(): ReactNode {
                         </div>
                         {resp.student?.group && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{resp.student.group}</div>}
                         {resp.message && <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '0.25rem' }}>{resp.message}</div>}
+                        {resp.messages?.[0] && (
+                          <div className={styles.lastMessage}>
+                            <span>{resp.messages[0].author.fullName}:</span> {resp.messages[0].text}
+                          </div>
+                        )}
                         {resp.status === TopicResponseStatus.PENDING && (
                           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                            <button type="button" className={styles.btnGhost} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setDiscussion({ topicId: topic.id, response: resp })}>Обсудить</button>
                             <button type="button" className={styles.btnApprove} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => void handleAccept(topic.id, resp.id)}>Принять</button>
                             <button type="button" className={styles.btnReject} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => void handleReject(topic.id, resp.id)}>Отклонить</button>
                           </div>
+                        )}
+                        {resp.status !== TopicResponseStatus.PENDING && (
+                          <button type="button" className={styles.btnGhost} style={{ marginTop: '0.5rem', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setDiscussion({ topicId: topic.id, response: resp })}>
+                            История обсуждения
+                          </button>
                         )}
                       </div>
                     ))
@@ -597,6 +589,13 @@ function SupervisorTopicsTab(): ReactNode {
             </div>
           ))}
         </div>
+      )}
+      {discussion && (
+        <ResponseDiscussion
+          topicId={discussion.topicId}
+          response={discussion.response}
+          onClose={() => setDiscussion(null)}
+        />
       )}
     </div>
   );
@@ -754,7 +753,7 @@ function ProfileTab(): ReactNode {
 
 // ===== Main Dashboard =====
 
-type TabKey = 'works' | 'requests' | 'inbox' | 'topics' | 'my-topics' | 'messages' | 'profile';
+type TabKey = 'works' | 'requests' | 'inbox' | 'my-topics' | 'messages' | 'profile';
 
 export function DashboardPage(): ReactNode {
   const { user, hasRole } = useAuth();
@@ -765,7 +764,6 @@ export function DashboardPage(): ReactNode {
   const tabs: { key: TabKey; label: string; show: boolean }[] = [
     { key: 'works', label: isSupervisor ? 'Мои студенты' : 'Работы', show: true },
     { key: 'requests', label: 'Заявки', show: isStudent },
-    { key: 'topics', label: 'Темы преподавателей', show: isStudent },
     { key: 'inbox', label: 'Входящие', show: isSupervisor },
     { key: 'my-topics', label: 'Мои темы', show: isSupervisor },
     { key: 'messages', label: 'Сообщения', show: true },
@@ -802,7 +800,6 @@ export function DashboardPage(): ReactNode {
 
       {activeTab === 'works' && <WorksTab isSupervisor={isSupervisor} />}
       {activeTab === 'requests' && isStudent && <StudentRequestsTab />}
-      {activeTab === 'topics' && isStudent && <StudentTopicsTab />}
       {activeTab === 'inbox' && isSupervisor && <SupervisorInboxTab />}
       {activeTab === 'my-topics' && isSupervisor && <SupervisorTopicsTab />}
       {activeTab === 'messages' && <MessagesTab />}

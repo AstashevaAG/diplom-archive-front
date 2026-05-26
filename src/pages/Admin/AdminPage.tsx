@@ -13,11 +13,21 @@ function getRoleClass(role: string): string {
   return styles.roleDefault;
 }
 
+function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 export function AdminPage(): ReactNode {
   const [users, setUsers] = useState<User[]>([]);
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [exporting, setExporting] = useState<'csv' | 'pdf' | null>(null);
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   useEffect(() => {
@@ -65,6 +75,20 @@ export function AdminPage(): ReactNode {
     }
   };
 
+  const handleExportReport = async (format: 'csv' | 'pdf'): Promise<void> => {
+    setExporting(format);
+    try {
+      const blob =
+        format === 'csv'
+          ? await analyticsApi.exportDepartmentCsv()
+          : await analyticsApi.exportDepartmentPdf();
+      const stamp = new Date().toISOString().slice(0, 10);
+      downloadBlob(blob, `department-report-${stamp}.${format}`);
+    } finally {
+      setExporting(null);
+    }
+  };
+
   if (isLoading) {
     return <div className={styles.loading}>Загрузка...</div>;
   }
@@ -72,8 +96,28 @@ export function AdminPage(): ReactNode {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Панель управления</h1>
-        <p className={styles.subtitle}>Управление пользователями и системными настройками</p>
+        <div>
+          <h1 className={styles.title}>Панель управления</h1>
+          <p className={styles.subtitle}>Управление пользователями и системными настройками</p>
+        </div>
+        <div className={styles.reportActions}>
+          <button
+            type="button"
+            className={styles.reportBtn}
+            disabled={exporting !== null}
+            onClick={() => void handleExportReport('csv')}
+          >
+            {exporting === 'csv' ? 'Формирование...' : 'Экспорт Excel'}
+          </button>
+          <button
+            type="button"
+            className={styles.reportBtnPrimary}
+            disabled={exporting !== null}
+            onClick={() => void handleExportReport('pdf')}
+          >
+            {exporting === 'pdf' ? 'Формирование...' : 'Экспорт PDF'}
+          </button>
+        </div>
       </div>
 
       {/* Stats */}

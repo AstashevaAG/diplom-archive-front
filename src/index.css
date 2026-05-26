@@ -53,6 +53,8 @@
   --shadow-md: 0 2px 8px rgba(0, 52, 102, 0.1);
   --shadow-lg: 0 8px 24px rgba(0, 52, 102, 0.14);
   --shadow-xl: 0 18px 42px rgba(0, 52, 102, 0.18);
+  --shadow-focus: 0 0 0 3px var(--accent-subtle);
+  --surface-line: rgba(168, 200, 218, 0.7);
 
   /* Spacing */
   --header-height: 56px;
@@ -80,7 +82,7 @@ html {
   -moz-osx-font-smoothing: grayscale;
   font-size: 16px;
   line-height: 1.5;
-  background: linear-gradient(180deg, #F8FCFE 0%, var(--bg-primary) 42%, #E7F3F8 100%);
+  background: #F4FAFD;
   color: var(--text-primary);
   tab-size: 4;
   overflow-x: hidden;
@@ -90,9 +92,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   background:
-    radial-gradient(circle at 12% 0%, rgba(0, 101, 153, 0.13), transparent 30rem),
-    radial-gradient(circle at 90% 8%, rgba(245, 121, 33, 0.12), transparent 24rem),
-    linear-gradient(180deg, #F8FCFE 0%, var(--bg-primary) 42%, #E7F3F8 100%);
+    linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(244, 250, 253, 0.96) 18rem, var(--bg-primary) 100%);
   overflow-x: hidden;
 }
 
@@ -147,6 +147,49 @@ img, svg {
   outline-offset: 2px;
 }
 
+/* ===== Product Polish ===== */
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+a {
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+input,
+select,
+textarea {
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+main > [class*="page"] {
+  width: min(100%, var(--content-max-width));
+}
+
+main > [class*="page"] > [class*="header"] [class*="title"] {
+  letter-spacing: 0;
+}
+
 @media (max-width: 768px) {
   *,
   *::before,
@@ -182,13 +225,5 @@ img, svg {
     width: 100%;
     padding: 1.25rem 1rem;
     overflow-x: hidden;
-  }
-
-  [class*="grid"] {
-    gap: 0.75rem;
-  }
-
-  [class*="card"] {
-    border-radius: var(--radius-lg);
   }
 }

@@ -99,6 +99,10 @@ export interface WorkFile {
   type: string;
   originalName: string;
   url: string;
+  size: number;
+  version: number;
+  comment: string | null;
+  createdAt: string;
 }
 
 export interface WorkAuthor {
@@ -116,7 +120,8 @@ export interface Work {
   tags: string[];
   status: WorkStatus;
   year: number | null;
-  qualityScore: number | null;
+  commissionReviewScore: number | null;
+  externalReviewScore: number | null;
   viewCount: number;
   isPublic: boolean;
   createdAt: string;
@@ -127,6 +132,33 @@ export interface Work {
   supervisor: WorkAuthor | null;
   files: WorkFile[];
   _count: { reviews: number; comments: number };
+}
+
+export interface FileMetadataChange {
+  field: string;
+  label: string;
+  before: string | null;
+  after: string | null;
+  changed: boolean;
+}
+
+export interface TextDiffItem {
+  type: 'added' | 'removed' | 'unchanged';
+  text: string;
+}
+
+export interface FileVersionCompareResult {
+  from: WorkFile;
+  to: WorkFile;
+  metadataChanges: FileMetadataChange[];
+  textDiff: {
+    available: boolean;
+    message?: string;
+    addedCount: number;
+    removedCount: number;
+    unchangedCount: number;
+    items: TextDiffItem[];
+  };
 }
 
 export interface CreateWorkData {
@@ -195,7 +227,7 @@ export interface SearchResult {
   category: string | null;
   tags: string[];
   year: number | null;
-  qualityScore: number | null;
+  commissionReviewScore: number | null;
   authorName: string;
   supervisorName: string | null;
   rank: number;
@@ -240,7 +272,8 @@ export interface Review {
   updatedAt: string;
   reviewerId: string;
   workId: string;
-  reviewer?: { id: string; fullName: string };
+  reviewer: { id: string; fullName: string; role: Role } | null;
+  isCommissionReview: boolean;
 }
 
 export interface CreateReviewData {
@@ -341,6 +374,7 @@ export interface WorkMessage {
   authorId: string;
   workId: string;
   author: { id: string; fullName: string; avatarUrl: string | null };
+  file: WorkFile | null;
 }
 
 // === Supervisor Topic ===
@@ -382,6 +416,16 @@ export interface TopicResponse {
     portfolioItems?: { id: string; title: string; type: PortfolioItemType; year: number | null; grade: string | null }[];
   };
   topic?: SupervisorTopic;
+  messages?: TopicResponseMessage[];
+}
+
+export interface TopicResponseMessage {
+  id: string;
+  text: string;
+  createdAt: string;
+  authorId: string;
+  responseId: string;
+  author: { id: string; fullName: string; avatarUrl: string | null };
 }
 
 export interface ReviewCriteriaConfig {

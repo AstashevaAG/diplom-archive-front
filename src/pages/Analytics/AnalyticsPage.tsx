@@ -18,7 +18,16 @@ import { analyticsApi } from '../../api';
 import type { TrendItem, SupervisorStats, ScoreDistribution, DashboardData } from '../../types';
 import styles from './Analytics.module.css';
 
-const CHART_COLORS = ['#6366F1', '#2DD4BF', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+const CHART_COLORS = ['#006599', '#F57921', '#003466', '#1F8A4C', '#B56A00', '#4C6F86'];
+const GRID_COLOR = '#D7EAF4';
+const AXIS_COLOR = '#4C6F86';
+const TOOLTIP_STYLE = {
+  background: '#FFFFFF',
+  border: '1px solid #A8C8DA',
+  borderRadius: '6px',
+  color: '#003466',
+  fontSize: '12px',
+};
 
 export function AnalyticsPage(): ReactNode {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
@@ -102,17 +111,10 @@ export function AnalyticsPage(): ReactNode {
             {lineData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={lineData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                  <XAxis dataKey="year" stroke="#71717A" fontSize={12} />
-                  <YAxis stroke="#71717A" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: '#18181B',
-                      border: '1px solid #27272A',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                    }}
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+                  <XAxis dataKey="year" stroke={AXIS_COLOR} fontSize={12} />
+                  <YAxis stroke={AXIS_COLOR} fontSize={12} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                   <Legend wrapperStyle={{ fontSize: '12px' }} />
                   {trendCategories.slice(0, 5).map((cat, i) => (
                     <Line
@@ -139,18 +141,11 @@ export function AnalyticsPage(): ReactNode {
             {scores.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={scores}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                  <XAxis dataKey="range" stroke="#71717A" fontSize={12} />
-                  <YAxis stroke="#71717A" fontSize={12} />
-                  <Tooltip
-                    contentStyle={{
-                      background: '#18181B',
-                      border: '1px solid #27272A',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                    }}
-                  />
-                  <Bar dataKey="count" fill="#6366F1" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+                  <XAxis dataKey="range" stroke={AXIS_COLOR} fontSize={12} />
+                  <YAxis stroke={AXIS_COLOR} fontSize={12} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
+                  <Bar dataKey="count" fill="#006599" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -174,20 +169,13 @@ export function AnalyticsPage(): ReactNode {
                     cy="50%"
                     outerRadius={100}
                     strokeWidth={1}
-                    stroke="#27272A"
+                    stroke="#FFFFFF"
                   >
                     {supervisorStats.slice(0, 6).map((_, i) => (
                       <Cell key={`cell-${String(i)}`} fill={CHART_COLORS[i % CHART_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{
-                      background: '#18181B',
-                      border: '1px solid #27272A',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                    }}
-                  />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (

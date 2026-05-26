@@ -45,9 +45,9 @@ export function useWorkChat(workId: string) {
     };
   }, [workId]);
 
-  const sendMessage = useCallback((text: string) => {
+  const sendMessage = useCallback((text: string, fileId?: string) => {
     if (!socketRef.current?.connected || !text.trim()) return;
-    socketRef.current.emit('sendMessage', { workId, text: text.trim() });
+    socketRef.current.emit('sendMessage', { workId, text: text.trim(), fileId });
   }, [workId]);
 
   return { messages, setMessages, connected, sendMessage };

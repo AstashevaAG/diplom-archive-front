@@ -32,6 +32,31 @@ export function CatalogPage(): ReactNode {
 
   const debouncedQuery = useDebounce(query, 300);
 
+  const runSearch = useCallback(async (searchQuery: string, pageNum: number): Promise<void> => {
+    const trimmed = searchQuery.trim();
+    if (!trimmed) {
+      setIsSearchMode(false);
+      setSearchResponse(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setIsSearchMode(true);
+    setShowSuggestions(false);
+    try {
+      const result = await searchApi.search({ q: trimmed, page: pageNum, limit: 12 });
+      setSearchResponse(result);
+      setTotalPages(result.totalPages);
+      setTotal(result.total);
+    } catch {
+      setSearchResponse(null);
+      setTotalPages(1);
+      setTotal(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const loadWorks = useCallback(async (pageNum: number): Promise<void> => {
     setIsLoading(true);
     try {
@@ -58,6 +83,12 @@ export function CatalogPage(): ReactNode {
     }
   }, [page, isSearchMode, loadWorks]);
 
+  useEffect(() => {
+    if (isSearchMode && query.trim() && page !== (searchResponse?.page ?? 1)) {
+      void runSearch(query, page);
+    }
+  }, [page, isSearchMode, query, searchResponse?.page, runSearch]);
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
@@ -77,40 +108,18 @@ export function CatalogPage(): ReactNode {
   const handleSearch = async (): Promise<void> => {
     if (!query.trim()) {
       setIsSearchMode(false);
+      setSearchResponse(null);
       return;
     }
-    setIsLoading(true);
-    setIsSearchMode(true);
-    setShowSuggestions(false);
-    try {
-      const result = await searchApi.search({ q: query, page: 1, limit: 12 });
-      setSearchResponse(result);
-      setTotalPages(result.totalPages);
-      setTotal(result.total);
-    } catch {
-      setSearchResponse(null);
-    } finally {
-      setIsLoading(false);
-    }
+    setPage(1);
+    await runSearch(query, 1);
   };
 
   const handleSuggestionClick = (title: string): void => {
     setQuery(title);
     setShowSuggestions(false);
-    void (async (): Promise<void> => {
-      setIsLoading(true);
-      setIsSearchMode(true);
-      try {
-        const result = await searchApi.search({ q: title, page: 1, limit: 12 });
-        setSearchResponse(result);
-        setTotalPages(result.totalPages);
-        setTotal(result.total);
-      } catch {
-        setSearchResponse(null);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
+    setPage(1);
+    void runSearch(title, 1);
   };
 
   const searchResults: SearchResult[] = searchResponse?.data ?? [];
@@ -235,9 +244,9 @@ export function CatalogPage(): ReactNode {
                     <span>{result.authorName}</span>
                     {result.supervisorName && <span>{result.supervisorName}</span>}
                     {result.year && <span>{String(result.year)}</span>}
-                    {result.qualityScore !== null && (
-                      <span className={getScoreClass(result.qualityScore)}>
-                        {String(result.qualityScore)}%
+                    {result.commissionReviewScore !== null && (
+                      <span className={getScoreClass(result.commissionReviewScore)}>
+                        {String(result.commissionReviewScore)}%
                       </span>
                     )}
                   </div>
@@ -303,9 +312,9 @@ export function CatalogPage(): ReactNode {
                     <span className={styles.badge}>
                       {WORK_STATUS_LABELS[work.status] ?? work.status}
                     </span>
-                    {work.qualityScore !== null && (
-                      <span className={getScoreClass(work.qualityScore)}>
-                        {String(work.qualityScore)}%
+                    {work.commissionReviewScore !== null && (
+                      <span className={getScoreClass(work.commissionReviewScore)}>
+                        {String(work.commissionReviewScore)}%
                       </span>
                     )}
                   </div>

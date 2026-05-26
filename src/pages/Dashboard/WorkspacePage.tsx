@@ -4,7 +4,13 @@ import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewM
 import { WorkMetaEditor } from '../../components/WorkMetaEditor/WorkMetaEditor';
 import { worksApi, stagesApi, filesApi } from '../../api';
 import { useAuth, useWorkChat } from '../../hooks';
-import { WorkStatus, type Work, type WorkFile, type WorkStage } from '../../types';
+import {
+  WorkStatus,
+  type FileVersionCompareResult,
+  type Work,
+  type WorkFile,
+  type WorkStage,
+} from '../../types';
 import { WORK_STATUS_LABELS } from '../../utils/constants';
 import styles from './Workspace.module.css';
 
@@ -22,6 +28,28 @@ function formatTime(dateStr: string): string {
   return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
+function formatBytes(size?: number): string {
+  if (!size || size <= 0) return 'размер не указан';
+  if (size < 1024) return `${size} Б`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} КБ`;
+  return `${(size / 1024 / 1024).toFixed(1)} МБ`;
+}
+
+function sortFileVersions(files?: WorkFile[]): WorkFile[] {
+  return [...(files ?? [])].sort((a, b) => {
+    const byVersion = (b.version ?? 0) - (a.version ?? 0);
+    if (byVersion !== 0) return byVersion;
+    return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+  });
+}
+
+function formatDiffValue(changeField: string, value: string | null): string {
+  if (!value) return '—';
+  if (changeField === 'createdAt') return formatTime(value);
+  if (changeField === 'size') return formatBytes(Number(value));
+  return value;
+}
+
 export function WorkspacePage(): ReactNode {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -31,11 +59,16 @@ export function WorkspacePage(): ReactNode {
   const [stages, setStages] = useState<WorkStage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [messageText, setMessageText] = useState('');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [newStatus, setNewStatus] = useState<WorkStatus | ''>('');
   const [isStatusUpdating, setIsStatusUpdating] = useState(false);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [isChatFileUploading, setIsChatFileUploading] = useState(false);
   const [previewFile, setPreviewFile] = useState<WorkFile | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [compareFromId, setCompareFromId] = useState('');
+  const [compareToId, setCompareToId] = useState('');
+  const [versionDiff, setVersionDiff] = useState<FileVersionCompareResult | null>(null);
+  const [isComparingVersions, setIsComparingVersions] = useState(false);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -63,15 +96,54 @@ export function WorkspacePage(): ReactNode {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  useEffect(() => {
+    const versions = sortFileVersions(work?.files);
+    if (versions.length < 2) return;
+    const ids = new Set(versions.map((file) => file.id));
+    if (!compareToId || !ids.has(compareToId)) {
+      setCompareToId(versions[0].id);
+    }
+    if (!compareFromId || !ids.has(compareFromId) || compareFromId === compareToId) {
+      setCompareFromId(versions[1].id);
+    }
+  }, [work?.files, compareFromId, compareToId]);
+
   const isSupervisor = user?.id === work?.supervisorId;
   const isAuthor = user?.id === work?.authorId;
   const canAccess = isSupervisor || isAuthor;
+  const canEditWorkInfo = isSupervisor;
+  const canUploadFinalFile = isSupervisor || isAuthor;
 
   const handleSendMessage = (e: FormEvent): void => {
     e.preventDefault();
-    if (!messageText.trim()) return;
-    sendMessage(messageText.trim());
-    setMessageText('');
+    if ((!messageText.trim() && !attachedFile) || !id || !connected || isChatFileUploading) return;
+    void (async (): Promise<void> => {
+      setIsChatFileUploading(true);
+      try {
+        let fileId: string | undefined;
+        if (attachedFile) {
+          const uploaded = await filesApi.upload(
+            id,
+            attachedFile,
+            messageText.trim() ? `Файл из чата: ${messageText.trim()}` : 'Файл из чата',
+          );
+          fileId = uploaded.id;
+          setWork((prev) =>
+            prev ? { ...prev, files: [uploaded, ...(prev.files ?? [])] } : prev,
+          );
+          setVersionDiff(null);
+        }
+
+        const text = messageText.trim() || `Прикреплён файл: ${attachedFile?.name ?? 'файл'}`;
+        sendMessage(text, fileId);
+        setMessageText('');
+        setAttachedFile(null);
+      } catch {
+        // ignore
+      } finally {
+        setIsChatFileUploading(false);
+      }
+    })();
   };
 
   const handleStageToggle = async (stageId: string, completed: boolean): Promise<void> => {
@@ -86,6 +158,13 @@ export function WorkspacePage(): ReactNode {
 
   const handleStatusUpdate = async (): Promise<void> => {
     if (!newStatus || !id) return;
+    if (newStatus === work?.status) {
+      setNewStatus('');
+      return;
+    }
+    if (newStatus === WorkStatus.PUBLISHED && !confirm('Опубликовать работу в каталоге? После этого она станет видна всем.')) {
+      return;
+    }
     setIsStatusUpdating(true);
     try {
       const updated = await worksApi.updateStatus(id, newStatus);
@@ -98,31 +177,23 @@ export function WorkspacePage(): ReactNode {
     }
   };
 
-  const handleFileUpload = async (file: File): Promise<void> => {
-    if (!id) return;
-    setIsUploadingFile(true);
-    try {
-      await filesApi.upload(id, file);
-      const updated = await worksApi.getById(id);
-      setWork(updated);
-    } catch {
-      // ignore
-    } finally {
-      setIsUploadingFile(false);
-    }
+  const handleFinalFileUploaded = (file: WorkFile): void => {
+    setWork((prev) =>
+      prev ? { ...prev, files: [file, ...(prev.files ?? [])] } : prev,
+    );
+    setVersionDiff(null);
   };
 
-  const handlePublish = async (): Promise<void> => {
-    if (!id || !isSupervisor) return;
-    if (!confirm('Опубликовать работу в каталоге? После этого она станет видна всем.')) return;
-    setIsStatusUpdating(true);
+  const handleCompareVersions = async (): Promise<void> => {
+    if (!id || !compareFromId || !compareToId || compareFromId === compareToId) return;
+    setIsComparingVersions(true);
     try {
-      const updated = await worksApi.updateStatus(id, WorkStatus.PUBLISHED);
-      setWork(updated);
+      const diff = await filesApi.compareVersions(id, compareFromId, compareToId);
+      setVersionDiff(diff);
     } catch {
-      // ignore
+      setVersionDiff(null);
     } finally {
-      setIsStatusUpdating(false);
+      setIsComparingVersions(false);
     }
   };
 
@@ -133,6 +204,7 @@ export function WorkspacePage(): ReactNode {
   const progressPct = stages.length ? Math.round((completedCount / stages.length) * 100) : 0;
   const currentStatusIdx = STATUS_STEPS.indexOf(work.status);
   const isPublished = work.status === WorkStatus.PUBLISHED;
+  const fileVersions = sortFileVersions(work.files);
 
   return (
     <div className={styles.page}>
@@ -157,20 +229,18 @@ export function WorkspacePage(): ReactNode {
             </span>
           </div>
         </div>
-        {isSupervisor && !isPublished && (
-          <button
-            type="button"
-            className={styles.publishBtn}
-            disabled={isStatusUpdating}
-            onClick={() => void handlePublish()}
-          >
-            Опубликовать в каталоге
-          </button>
-        )}
       </div>
 
       <div className={styles.workMetaBlock}>
-        <WorkMetaEditor work={work} onSaved={(w) => setWork(w)} />
+        {(canEditWorkInfo || canUploadFinalFile) && (
+          <WorkMetaEditor
+            work={work}
+            onSaved={(w) => setWork(w)}
+            canEditMeta={canEditWorkInfo}
+            canUploadFinalFile={canUploadFinalFile}
+            onFileUploaded={handleFinalFileUploaded}
+          />
+        )}
         {work.description?.trim() && (
           <div className={styles.textBlock}>
             <h3 className={styles.textBlockTitle}>Описание</h3>
@@ -188,55 +258,61 @@ export function WorkspacePage(): ReactNode {
       </div>
 
       {/* Progress */}
-      <div className={styles.progressSection}>
-        <div className={styles.progressHeader}>
-          <span className={styles.progressLabel}>Прогресс работы</span>
-          <span className={styles.progressPct}>{progressPct}%</span>
+      {!isPublished && (
+        <div className={styles.progressSection}>
+          <div className={styles.progressHeader}>
+            <span className={styles.progressLabel}>Прогресс работы</span>
+            <span className={styles.progressPct}>{progressPct}%</span>
+          </div>
+          <div className={styles.progressBar}>
+            <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
+          </div>
+          <div className={styles.statusSteps}>
+            {STATUS_STEPS.map((s, idx) => (
+              <div key={s} className={`${styles.statusStep} ${idx <= currentStatusIdx ? styles.statusStepDone : ''}`}>
+                <div className={styles.statusStepDot} />
+                <span>{WORK_STATUS_LABELS[s] ?? s}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        <div className={styles.progressBar}>
-          <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
-        </div>
-        <div className={styles.statusSteps}>
-          {STATUS_STEPS.map((s, idx) => (
-            <div key={s} className={`${styles.statusStep} ${idx <= currentStatusIdx ? styles.statusStepDone : ''}`}>
-              <div className={styles.statusStepDot} />
-              <span>{WORK_STATUS_LABELS[s] ?? s}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
 
       <div className={styles.content}>
         {/* Stages + Files Panel */}
         <div className={styles.stagesPanel}>
-          <h2 className={styles.panelTitle}>Этапы</h2>
-          <div className={styles.stagesList}>
-            {stages.map((stage) => (
-              <label key={stage.id} className={styles.stageItem}>
-                <input
-                  type="checkbox"
-                  checked={stage.isCompleted}
-                  onChange={(e) => void handleStageToggle(stage.id, e.target.checked)}
-                  className={styles.stageCheck}
-                />
-                <span className={`${styles.stageName} ${stage.isCompleted ? styles.stageNameDone : ''}`}>
-                  {stage.name}
-                </span>
-                {stage.isCompleted && stage.completedAt && (
-                  <span className={styles.stageDate}>{formatTime(stage.completedAt)}</span>
-                )}
-              </label>
-            ))}
-          </div>
+          {!isPublished && (
+            <>
+              <h2 className={styles.panelTitle}>Этапы</h2>
+              <div className={styles.stagesList}>
+                {stages.map((stage) => (
+                  <label key={stage.id} className={styles.stageItem}>
+                    <input
+                      type="checkbox"
+                      checked={stage.isCompleted}
+                      onChange={(e) => void handleStageToggle(stage.id, e.target.checked)}
+                      className={styles.stageCheck}
+                    />
+                    <span className={`${styles.stageName} ${stage.isCompleted ? styles.stageNameDone : ''}`}>
+                      {stage.name}
+                    </span>
+                    {stage.isCompleted && stage.completedAt && (
+                      <span className={styles.stageDate}>{formatTime(stage.completedAt)}</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
 
           {/* Files */}
           <div className={styles.filesSection}>
             <h3 className={styles.filesSectionTitle}>
-              Файлы работы ({work.files?.length ?? 0})
+              Версии файлов ({fileVersions.length})
             </h3>
-            {work.files && work.files.length > 0 && (
+            {fileVersions.length > 0 && (
               <div className={styles.filesList}>
-                {work.files.map((f) => (
+                {fileVersions.map((f) => (
                   <button
                     key={f.id}
                     type="button"
@@ -246,7 +322,15 @@ export function WorkspacePage(): ReactNode {
                   >
                     <span className={styles.fileIcon} aria-hidden>📄</span>
                     <div className={styles.fileMeta}>
-                      <span className={styles.fileName}>{f.originalName}</span>
+                      <span className={styles.fileName}>
+                        v{String(f.version ?? 1)} · {f.originalName}
+                      </span>
+                      <span className={styles.fileDetails}>
+                        {formatTime(f.createdAt)} · {formatBytes(f.size)}
+                      </span>
+                      {f.comment && (
+                        <span className={styles.fileComment}>{f.comment}</span>
+                      )}
                       <span className={styles.fileTypeBadge}>{f.type}</span>
                     </div>
                     <span className={styles.fileOpenHint}>
@@ -257,29 +341,98 @@ export function WorkspacePage(): ReactNode {
                 ))}
               </div>
             )}
-            <input
-              type="file"
-              ref={fileInputRef}
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handleFileUpload(file);
-                e.target.value = '';
-              }}
-            />
-            <button
-              type="button"
-              className={styles.uploadBtn}
-              disabled={isUploadingFile}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              {isUploadingFile ? 'Загрузка...' : '+ Прикрепить файл'}
-            </button>
+            {fileVersions.length === 0 && (
+              <div className={styles.versionEmpty}>Файлы ещё не загружены</div>
+            )}
+
+            {isSupervisor && fileVersions.length >= 2 && (
+              <div className={styles.versionCompare}>
+                <h3 className={styles.versionCompareTitle}>Сравнение версий</h3>
+                <div className={styles.versionCompareControls}>
+                  <select
+                    className={styles.versionSelect}
+                    value={compareFromId}
+                    onChange={(e) => setCompareFromId(e.target.value)}
+                  >
+                    {fileVersions.map((file) => (
+                      <option key={file.id} value={file.id}>
+                        v{String(file.version)} · {formatTime(file.createdAt)}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className={styles.versionSelect}
+                    value={compareToId}
+                    onChange={(e) => setCompareToId(e.target.value)}
+                  >
+                    {fileVersions.map((file) => (
+                      <option key={file.id} value={file.id}>
+                        v{String(file.version)} · {formatTime(file.createdAt)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className={styles.btnPrimary}
+                    disabled={!compareFromId || !compareToId || compareFromId === compareToId || isComparingVersions}
+                    onClick={() => void handleCompareVersions()}
+                  >
+                    {isComparingVersions ? '...' : 'Сравнить'}
+                  </button>
+                </div>
+
+                {versionDiff && (
+                  <div className={styles.versionDiff}>
+                    <div className={styles.versionDiffSummary}>
+                      v{String(versionDiff.from.version)} → v{String(versionDiff.to.version)}
+                    </div>
+                    <div className={styles.metadataDiffList}>
+                      {versionDiff.metadataChanges.map((change) => (
+                        <div
+                          key={change.field}
+                          className={`${styles.metadataDiffItem} ${change.changed ? styles.metadataDiffChanged : ''}`}
+                        >
+                          <span>{change.label}</span>
+                          <strong>
+                            {formatDiffValue(change.field, change.before)} → {formatDiffValue(change.field, change.after)}
+                          </strong>
+                        </div>
+                      ))}
+                    </div>
+                    {versionDiff.textDiff.available ? (
+                      <div className={styles.textDiffBlock}>
+                        <div className={styles.textDiffStats}>
+                          +{versionDiff.textDiff.addedCount} / -{versionDiff.textDiff.removedCount}
+                        </div>
+                        <div className={styles.textDiffList}>
+                          {versionDiff.textDiff.items
+                            .filter((item) => item.type !== 'unchanged')
+                            .slice(0, 12)
+                            .map((item, index) => (
+                              <div
+                                key={`${item.type}-${String(index)}`}
+                                className={item.type === 'added' ? styles.diffAdded : styles.diffRemoved}
+                              >
+                                {item.type === 'added' ? '+ ' : '- '}
+                                {item.text}
+                              </div>
+                            ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={styles.textDiffUnavailable}>
+                        {versionDiff.textDiff.message}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
-          {isSupervisor && (
+          {isSupervisor && !isPublished && (
             <div className={styles.statusUpdateSection}>
-              <h3 className={styles.statusUpdateTitle}>Обновить статус</h3>
+              <h3 className={styles.statusUpdateTitle}>Статус работы</h3>
               <div className={styles.statusUpdateRow}>
                 <select
                   className={styles.statusSelect}
@@ -287,14 +440,14 @@ export function WorkspacePage(): ReactNode {
                   onChange={(e) => setNewStatus(e.target.value as WorkStatus)}
                 >
                   <option value="">Выберите статус</option>
-                  {STATUS_STEPS.filter((s) => s !== WorkStatus.PUBLISHED).map((s) => (
+                  {STATUS_STEPS.map((s) => (
                     <option key={s} value={s}>{WORK_STATUS_LABELS[s] ?? s}</option>
                   ))}
                 </select>
                 <button
                   type="button"
                   className={styles.btnPrimary}
-                  disabled={!newStatus || isStatusUpdating}
+                  disabled={!newStatus || newStatus === work.status || isStatusUpdating}
                   onClick={() => void handleStatusUpdate()}
                 >
                   {isStatusUpdating ? '...' : 'Применить'}
@@ -319,6 +472,19 @@ export function WorkspacePage(): ReactNode {
                 <div key={msg.id} className={`${styles.chatMsg} ${isMyMsg ? styles.chatMsgMy : styles.chatMsgOther}`}>
                   <div className={styles.chatMsgAuthor}>{msg.author.fullName}</div>
                   <div className={styles.chatMsgText}>{msg.text}</div>
+                  {msg.file && (
+                    <button
+                      type="button"
+                      className={styles.chatFileCard}
+                      onClick={() => setPreviewFile(msg.file)}
+                    >
+                      <span className={styles.chatFileIcon} aria-hidden>📄</span>
+                      <span className={styles.chatFileInfo}>
+                        <span className={styles.chatFileName}>{msg.file.originalName}</span>
+                        <span className={styles.chatFileMeta}>v{String(msg.file.version)} · {formatBytes(msg.file.size)}</span>
+                      </span>
+                    </button>
+                  )}
                   <div className={styles.chatMsgTime}>{formatTime(msg.createdAt)}</div>
                 </div>
               );
@@ -326,25 +492,50 @@ export function WorkspacePage(): ReactNode {
             <div ref={messagesEndRef} />
           </div>
           <form className={styles.chatForm} onSubmit={handleSendMessage}>
-            <textarea
-              className={styles.chatInput}
-              placeholder="Сообщение... (Enter для отправки)"
-              value={messageText}
-              onChange={(e) => setMessageText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage(e);
-                }
+            <div className={styles.chatComposerMain}>
+              {attachedFile && (
+                <div className={styles.attachedFilePreview}>
+                  <span>{attachedFile.name}</span>
+                  <button type="button" onClick={() => setAttachedFile(null)}>×</button>
+                </div>
+              )}
+              <textarea
+                className={styles.chatInput}
+                placeholder="Сообщение... (Enter для отправки)"
+                value={messageText}
+                onChange={(e) => setMessageText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage(e);
+                  }
+                }}
+                rows={2}
+              />
+            </div>
+            <input
+              ref={chatFileInputRef}
+              type="file"
+              hidden
+              onChange={(e) => {
+                setAttachedFile(e.target.files?.[0] ?? null);
+                e.target.value = '';
               }}
-              rows={2}
             />
+            <button
+              type="button"
+              className={styles.btnAttach}
+              onClick={() => chatFileInputRef.current?.click()}
+              disabled={isChatFileUploading}
+            >
+              Прикрепить
+            </button>
             <button
               type="submit"
               className={styles.btnSend}
-              disabled={!messageText.trim() || !connected}
+              disabled={(!messageText.trim() && !attachedFile) || !connected || isChatFileUploading}
             >
-              Отправить
+              {isChatFileUploading ? 'Загрузка...' : 'Отправить'}
             </button>
           </form>
         </div>

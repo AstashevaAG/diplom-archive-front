@@ -10,9 +10,10 @@
   width: 100%;
   max-width: 400px;
   padding: 2rem;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--surface-line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
 }
 
 .header {
@@ -26,7 +27,8 @@
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: var(--accent-muted);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   color: var(--accent-hover);
   margin-bottom: 1rem;
@@ -42,7 +44,7 @@
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 0.25rem;
-  letter-spacing: -0.02em;
+  letter-spacing: 0;
 }
 
 .subtitle {
@@ -72,7 +74,7 @@
 .input {
   padding: 0.625rem 0.75rem;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -82,7 +84,7 @@
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-subtle);
+  box-shadow: var(--shadow-focus);
 }
 
 .input::placeholder {
@@ -92,7 +94,7 @@
 .select {
   padding: 0.625rem 0.75rem;
   background: var(--bg-primary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--surface-line);
   border-radius: var(--radius-md);
   color: var(--text-primary);
   font-size: 0.875rem;
@@ -108,7 +110,7 @@
 
 .select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-subtle);
+  box-shadow: var(--shadow-focus);
 }
 
 .select option {
@@ -126,12 +128,16 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   margin-top: 0.25rem;
 }
 
 .submitBtn:hover:not(:disabled) {
   background: var(--accent-hover);
+  box-shadow: 0 8px 18px rgba(var(--accent-rgb), 0.24);
 }
 
 .submitBtn:disabled {

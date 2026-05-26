@@ -70,4 +70,14 @@ export const analyticsApi = {
 
   getDashboard: () =>
     api.get<DashboardData>('/analytics/dashboard').then((r) => r.data),
+
+  exportDepartmentCsv: () =>
+    api
+      .get<Blob>('/analytics/reports/department.csv', { responseType: 'blob' })
+      .then((r) => r.data),
+
+  exportDepartmentPdf: () =>
+    api
+      .get<Blob>('/analytics/reports/department.pdf', { responseType: 'blob' })
+      .then((r) => r.data),
 };
