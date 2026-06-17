@@ -1,0 +1,130 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 52, 102, 0.42);
+  backdrop-filter: blur(6px);
+}
+
+.panel {
+  width: min(420px, 100%);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1rem 0.75rem;
+}
+
+.mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  background: var(--accent-muted);
+  font-weight: 700;
+}
+
+.markDanger {
+  color: var(--danger);
+  background: var(--danger-muted);
+}
+
+.markWarning {
+  color: var(--warning);
+  background: var(--warning-muted);
+}
+
+.title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.message {
+  margin: 0.35rem 0 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding: 0.875rem 1rem 1rem;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--surface-line);
+}
+
+.button {
+  min-height: 2.25rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary {
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+}
+
+.secondary:hover {
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+.primary {
+  color: white;
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+}
+
+.primary:hover {
+  background: var(--accent-blue-hover);
+  border-color: var(--accent-blue-hover);
+}
+
+.danger {
+  color: white;
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.danger:hover {
+  filter: brightness(0.94);
+}
+
+@media (max-width: 520px) {
+  .panel {
+    width: 100%;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .button {
+    width: 100%;
+  }
+}

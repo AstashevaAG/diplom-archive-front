@@ -10,3 +10,5 @@ export { portfolioApi } from './portfolioApi';
 export { supervisorTopicsApi, reviewCriteriaApi } from './supervisorTopicsApi';
 export { infoApi } from './infoApi';
 export type { InfoPost, CreateInfoPostData } from './infoApi';
+export { faqApi } from './faqApi';
+export type { FaqItem, CreateFaqItemData } from './faqApi';

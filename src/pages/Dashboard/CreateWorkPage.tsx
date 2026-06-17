@@ -1,7 +1,7 @@
-import { useState, useRef, type ReactNode, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
+import { useEffect, useState, useRef, type ReactNode, type FormEvent, type KeyboardEvent, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { worksApi, filesApi } from '../../api';
-import type { CreateWorkData, WorkFile } from '../../types';
+import { worksApi, filesApi, usersApi } from '../../api';
+import type { CreateWorkData, WorkFile, User } from '../../types';
 import styles from './CreateWorkPage.module.css';
 
 interface PendingFile {
@@ -29,8 +29,11 @@ export function CreateWorkPage(): ReactNode {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [uploadProgress, setUploadProgress] = useState('');
+  const [supervisors, setSupervisors] = useState<User[]>([]);
+  const [isSupervisorsLoading, setIsSupervisorsLoading] = useState(true);
 
   const [title, setTitle] = useState('');
+  const [supervisorId, setSupervisorId] = useState('');
   const [description, setDescription] = useState('');
   const [annotation, setAnnotation] = useState('');
   const [category, setCategory] = useState('');
@@ -38,6 +41,13 @@ export function CreateWorkPage(): ReactNode {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
+
+  useEffect(() => {
+    void usersApi.getSupervisors()
+      .then(setSupervisors)
+      .catch(() => setError('Не удалось загрузить список преподавателей'))
+      .finally(() => setIsSupervisorsLoading(false));
+  }, []);
 
   const handleAddTag = (e: KeyboardEvent<HTMLInputElement>): void => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -76,7 +86,7 @@ export function CreateWorkPage(): ReactNode {
 
   const handleSubmit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    if (!title.trim()) return;
+    if (!title.trim() || !supervisorId) return;
 
     setIsSubmitting(true);
     setError('');
@@ -84,6 +94,7 @@ export function CreateWorkPage(): ReactNode {
     try {
       const data: CreateWorkData = {
         title: title.trim(),
+        supervisorId,
       };
       if (description.trim()) data.description = description.trim();
       if (annotation.trim()) data.annotation = annotation.trim();
@@ -107,7 +118,7 @@ export function CreateWorkPage(): ReactNode {
         setUploadProgress('');
       }
 
-      navigate(`/catalog/${work.id}`);
+      navigate(`/dashboard/works/${work.id}/workspace`);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : 'Не удалось создать работу';
@@ -147,6 +158,33 @@ export function CreateWorkPage(): ReactNode {
             onChange={(e) => setTitle(e.target.value)}
             required
           />
+        </div>
+
+        <div className={styles.formGroup}>
+          <label className={styles.label} htmlFor="work-supervisor">
+            Преподаватель <span className={styles.required}>*</span>
+          </label>
+          <select
+            id="work-supervisor"
+            className={styles.select}
+            value={supervisorId}
+            onChange={(e) => setSupervisorId(e.target.value)}
+            required
+            disabled={isSupervisorsLoading}
+          >
+            <option value="">
+              {isSupervisorsLoading ? 'Загрузка преподавателей...' : 'Выберите преподавателя'}
+            </option>
+            {supervisors.map((supervisor) => (
+              <option key={supervisor.id} value={supervisor.id}>
+                {supervisor.fullName}
+                {supervisor.specialization ? ` · ${supervisor.specialization}` : ''}
+              </option>
+            ))}
+          </select>
+          <span className={styles.hint}>
+            После создания карточки преподаватель получит запрос на руководство.
+          </span>
         </div>
 
         <div className={styles.formGroup}>
@@ -312,7 +350,7 @@ export function CreateWorkPage(): ReactNode {
           <button
             type="submit"
             className={styles.btnPrimary}
-            disabled={isSubmitting || !title.trim()}
+            disabled={isSubmitting || !title.trim() || !supervisorId || isSupervisorsLoading}
           >
             {isSubmitting
               ? uploadProgress || 'Создание...'

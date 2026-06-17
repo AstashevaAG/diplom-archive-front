@@ -302,6 +302,10 @@
   opacity: 0.75;
 }
 
+.occupiedTopicsBlock {
+  margin-top: 1rem;
+}
+
 .requestTop {
   display: flex;
   align-items: flex-start;

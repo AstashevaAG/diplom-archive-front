@@ -23,7 +23,7 @@ export function ColleaguesPage(): ReactNode {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>Коллеги</h1>
-        <p className={styles.subtitle}>Научные руководители кафедры</p>
+        <p className={styles.subtitle}>Преподаватели кафедры</p>
       </div>
 
       {isLoading ? (

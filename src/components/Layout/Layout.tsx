@@ -145,7 +145,7 @@ export function Layout({ children }: LayoutProps): ReactNode {
               <path d="M6 12v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5" />
             </svg>
           </span>
-          Архив ВКР
+          Дипломный архив
         </Link>
 
         {isAuthenticated && (
@@ -162,10 +162,14 @@ export function Layout({ children }: LayoutProps): ReactNode {
               Темы
             </NavLink>
 
+            <NavLink to="/faq" className={getNavLinkClass}>
+              Информация
+            </NavLink>
+
             {/* Students see supervisors list; supervisors see colleagues */}
             {!hasRole(Role.SUPERVISOR) && !hasRole(Role.ADMIN) && (
               <NavLink to="/supervisors" className={getNavLinkClass}>
-                Руководители
+                Преподаватели
               </NavLink>
             )}
 
@@ -269,7 +273,7 @@ export function Layout({ children }: LayoutProps): ReactNode {
                   <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                   <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                 </svg>
-                <span>Руковод.</span>
+                <span>Препод.</span>
               </NavLink>
             )}
 
@@ -332,6 +336,7 @@ export function Layout({ children }: LayoutProps): ReactNode {
           {isAuthenticated && (
             <div className={styles.footerLinks}>
               <Link to="/catalog" className={styles.footerLink}>Каталог</Link>
+              <Link to="/faq" className={styles.footerLink}>Информация</Link>
               <Link to="/dashboard" className={styles.footerLink}>Кабинет</Link>
             </div>
           )}

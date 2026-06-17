@@ -91,7 +91,7 @@ export function AnalyticsPage(): ReactNode {
           </div>
           <div className={styles.stat}>
             <div className={styles.statValue}>{String(dashboard.totalSupervisors)}</div>
-            <div className={styles.statLabel}>Руководителей</div>
+            <div className={styles.statLabel}>Преподавателей</div>
           </div>
           <div className={styles.stat}>
             <div className={styles.statValue}>
@@ -156,7 +156,7 @@ export function AnalyticsPage(): ReactNode {
 
         {/* Supervisors Pie */}
         <div className={styles.chartCard}>
-          <div className={styles.chartTitle}>Работы по руководителям</div>
+          <div className={styles.chartTitle}>Работы по преподавателям</div>
           <div className={styles.chartWrap}>
             {supervisorStats.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -189,12 +189,12 @@ export function AnalyticsPage(): ReactNode {
       {supervisorStats.length > 0 && (
         <div className={styles.tableSection}>
           <div className={styles.tableHeader}>
-            <div className={styles.tableTitle}>Статистика руководителей</div>
+            <div className={styles.tableTitle}>Статистика преподавателей</div>
           </div>
           <table className={styles.table}>
             <thead>
               <tr>
-                <th>Руководитель</th>
+                <th>Преподаватель</th>
                 <th>Работ</th>
                 <th>Средняя оценка</th>
               </tr>

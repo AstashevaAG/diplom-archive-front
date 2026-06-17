@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
+import { useState, useEffect, useCallback, useMemo, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { StyledSelect } from '../../components/StyledSelect';
 import { searchApi, worksApi } from '../../api';
 import { useDebounce } from '../../hooks';
 import { WORK_STATUS_LABELS } from '../../utils/constants';
@@ -11,6 +12,59 @@ function getScoreClass(score: number | null): string {
   if (score >= 70) return styles.scoreHigh;
   if (score >= 40) return styles.scoreMedium;
   return styles.scoreLow;
+}
+
+function normalizeForHighlight(text: string): string {
+  return text.toLocaleLowerCase('ru-RU').replace(/ё/g, 'е');
+}
+
+function getHighlightTerms(query: string, convertedQuery?: string): string[] {
+  const rawTerms = [query, convertedQuery]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .flatMap((value) => {
+      const trimmed = value.trim();
+      return [trimmed, ...trimmed.split(/\s+/)];
+    });
+
+  return Array.from(new Set(rawTerms.map(normalizeForHighlight).filter((term) => term.length >= 2)))
+    .sort((a, b) => b.length - a.length);
+}
+
+function stripHeadlineMarkers(text: string): string {
+  return text.replace(/<\/?mark>/gi, '');
+}
+
+function HighlightedText({ text, terms }: { text: string; terms: string[] }): ReactNode {
+  if (terms.length === 0) return text;
+
+  const normalizedText = normalizeForHighlight(text);
+  const parts: ReactNode[] = [];
+  let cursor = 0;
+
+  while (cursor < text.length) {
+    const matchedTerm = terms.find((term) => normalizedText.startsWith(term, cursor));
+    if (!matchedTerm) {
+      const nextMatchIndex = terms.reduce((nearest, term) => {
+        const index = normalizedText.indexOf(term, cursor + 1);
+        if (index === -1) return nearest;
+        return nearest === -1 ? index : Math.min(nearest, index);
+      }, -1);
+      const nextCursor = nextMatchIndex === -1 ? text.length : nextMatchIndex;
+      parts.push(text.slice(cursor, nextCursor));
+      cursor = nextCursor;
+      continue;
+    }
+
+    const end = cursor + matchedTerm.length;
+    parts.push(
+      <mark className={styles.highlight} key={`${String(cursor)}-${matchedTerm}`}>
+        {text.slice(cursor, end)}
+      </mark>,
+    );
+    cursor = end;
+  }
+
+  return parts;
 }
 
 export function CatalogPage(): ReactNode {
@@ -89,6 +143,19 @@ export function CatalogPage(): ReactNode {
     }
   }, [page, isSearchMode, query, searchResponse?.page, runSearch]);
 
+  useEffect(() => {
+    const trimmed = debouncedQuery.trim();
+    setPage(1);
+    if (!trimmed) {
+      setIsSearchMode(false);
+      setSearchResponse(null);
+      setTotalPages(1);
+      setTotal(0);
+      return;
+    }
+    void runSearch(trimmed, 1);
+  }, [debouncedQuery, runSearch]);
+
   // Reset page when filters change
   useEffect(() => {
     setPage(1);
@@ -123,6 +190,10 @@ export function CatalogPage(): ReactNode {
   };
 
   const searchResults: SearchResult[] = searchResponse?.data ?? [];
+  const highlightTerms = useMemo(
+    () => getHighlightTerms(query, searchResponse?.convertedQuery),
+    [query, searchResponse?.convertedQuery],
+  );
 
   return (
     <div className={styles.page}>
@@ -174,26 +245,36 @@ export function CatalogPage(): ReactNode {
 
       {!isSearchMode && (
         <div className={styles.filtersBar}>
-          <select
+          <StyledSelect
             className={styles.filterSelect}
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortBy)}
-          >
-            <option value={SortBy.NEWEST}>Сначала новые</option>
-            <option value={SortBy.OLDEST}>Сначала старые</option>
-            <option value={SortBy.SCORE_DESC}>По оценке ↓</option>
-            <option value={SortBy.SCORE_ASC}>По оценке ↑</option>
-          </select>
+            onChange={(value) => {
+              setSortBy(value as SortBy);
+            }}
+            options={[
+              { value: SortBy.NEWEST, label: 'Сначала новые' },
+              { value: SortBy.OLDEST, label: 'Сначала старые' },
+              { value: SortBy.SCORE_DESC, label: 'По оценке ↓' },
+              { value: SortBy.SCORE_ASC, label: 'По оценке ↑' },
+            ]}
+            ariaLabel="Сортировка"
+            style={{ width: 'max-content', minWidth: '160px' }}
+          />
 
-          <select
+          <StyledSelect
             className={styles.filterSelect}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          >
-            <option value={StatusFilter.PUBLISHED}>Завершённые</option>
-            <option value={StatusFilter.IN_PROGRESS}>В процессе</option>
-            <option value={StatusFilter.ALL}>Все</option>
-          </select>
+            onChange={(value) => {
+              setStatusFilter(value as StatusFilter);
+            }}
+            options={[
+              { value: StatusFilter.PUBLISHED, label: 'Завершённые' },
+              { value: StatusFilter.IN_PROGRESS, label: 'В процессе' },
+              { value: StatusFilter.ALL, label: 'Все' },
+            ]}
+            ariaLabel="Статус"
+            style={{ width: 'max-content', minWidth: '140px' }}
+          />
 
           <input
             type="number"
@@ -233,12 +314,13 @@ export function CatalogPage(): ReactNode {
             <div className={styles.grid}>
               {searchResults.map((result) => (
                 <Link to={`/catalog/${result.id}`} className={styles.card} key={result.id}>
-                  <div className={styles.cardTitle}>{result.title}</div>
+                  <div className={styles.cardTitle}>
+                    <HighlightedText text={result.title} terms={highlightTerms} />
+                  </div>
                   {result.headline && (
-                    <div
-                      className={styles.cardAnnotation}
-                      dangerouslySetInnerHTML={{ __html: result.headline }}
-                    />
+                    <div className={styles.cardAnnotation}>
+                      <HighlightedText text={stripHeadlineMarkers(result.headline)} terms={highlightTerms} />
+                    </div>
                   )}
                   <div className={styles.cardMeta}>
                     <span>{result.authorName}</span>

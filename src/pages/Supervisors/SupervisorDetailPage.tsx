@@ -13,6 +13,7 @@ export function SupervisorDetailPage(): ReactNode {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, hasRole } = useAuth();
+  const isStudentView = hasRole(Role.STUDENT);
 
   const [supervisor, setSupervisor] = useState<User | null>(null);
   const [works, setWorks] = useState<Work[]>([]);
@@ -40,9 +41,9 @@ export function SupervisorDetailPage(): ReactNode {
         setWorks(worksData);
         setTopics(topicsData);
       })
-      .catch(() => navigate('/supervisors'))
+      .catch(() => navigate(isStudentView ? '/supervisors' : '/colleagues'))
       .finally(() => setIsLoading(false));
-  }, [id, navigate]);
+  }, [id, isStudentView, navigate]);
 
   const handleRequestSubmit = async (): Promise<void> => {
     if (!requestTopic.trim() || !id) return;
@@ -75,7 +76,9 @@ export function SupervisorDetailPage(): ReactNode {
   return (
     <div className={styles.page}>
       <div className={styles.backLink}>
-        <Link to="/supervisors">← Все преподаватели</Link>
+        <Link to={isStudentView ? '/supervisors' : '/colleagues'}>
+          ← Все преподаватели
+        </Link>
       </div>
 
       <div className={styles.profileCard}>

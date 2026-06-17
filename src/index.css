@@ -186,6 +186,10 @@ main > [class*="page"] {
   width: min(100%, var(--content-max-width));
 }
 
+main > [class*="authPage"] {
+  width: 100%;
+}
+
 main > [class*="page"] > [class*="header"] [class*="title"] {
   letter-spacing: 0;
 }

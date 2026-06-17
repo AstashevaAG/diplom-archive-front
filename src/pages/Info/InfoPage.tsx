@@ -1,4 +1,5 @@
 import { useState, useEffect, type ReactNode, type FormEvent } from 'react';
+import { useConfirmDialog } from '../../components/ConfirmDialog';
 import { useAuth } from '../../hooks';
 import { infoApi, type InfoPost, type CreateInfoPostData } from '../../api';
 import { Role } from '../../types';
@@ -116,9 +117,16 @@ interface PostCardProps {
 
 function PostCard({ post, canEdit, onEdit, onDelete, expanded, onToggle }: PostCardProps): ReactNode {
   const [deleting, setDeleting] = useState(false);
+  const { requestConfirmation } = useConfirmDialog();
 
   const handleDelete = async (): Promise<void> => {
-    if (!confirm('Удалить эту запись?')) return;
+    const confirmed = await requestConfirmation({
+      title: 'Удалить запись?',
+      message: 'Запись будет удалена из информационного центра. Это действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     setDeleting(true);
     try {
       await infoApi.delete(post.id);
@@ -174,7 +182,7 @@ function PostCard({ post, canEdit, onEdit, onDelete, expanded, onToggle }: PostC
 }
 
 export function InfoPage(): ReactNode {
-  const { isAuthenticated, hasRole } = useAuth();
+  const { user, isAuthenticated, hasRole } = useAuth();
   const [posts, setPosts] = useState<InfoPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [query, setQuery] = useState('');
@@ -278,7 +286,7 @@ export function InfoPage(): ReactNode {
             <PostCard
               key={post.id}
               post={post}
-              canEdit={canCreate && (hasRole(Role.ADMIN) || post.author.id === '')}
+              canEdit={canCreate && (hasRole(Role.ADMIN) || post.author.id === user?.id)}
               onEdit={(p) => { setEditingPost(p); setShowForm(false); }}
               onDelete={(id) => setPosts((prev) => prev.filter((p) => p.id !== id))}
               expanded={expandedId === post.id}

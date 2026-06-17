@@ -48,7 +48,7 @@ function ResponseDiscussion({ response, onClose }: ResponseDiscussionProps): Rea
         <div className={styles.modalBody}>
           <div className={styles.modalTopicTitle}>{response.topic?.title ?? 'Тема'}</div>
           {response.topic?.supervisor && (
-            <div className={styles.modalSupervisor}>Руководитель: {response.topic.supervisor.fullName}</div>
+            <div className={styles.modalSupervisor}>Преподаватель: {response.topic.supervisor.fullName}</div>
           )}
           <div className={styles.responseChat}>
             {isLoading ? (
@@ -134,6 +134,9 @@ export function TopicsPage(): ReactNode {
 
   const filtered = areaFilter ? topics.filter((t) => t.area === areaFilter) : topics;
 
+  const visibleMyResponses = myResponses.filter(
+    (response) => response.status === TopicResponseStatus.ACCEPTED,
+  );
   const respondedIds = new Set(myResponses.map((r) => r.topicId));
 
   const openEdit = (t: SupervisorTopic): void => {
@@ -193,7 +196,7 @@ export function TopicsPage(): ReactNode {
       <div className={styles.header}>
         <div>
           <h1 className={styles.title}>Темы дипломных работ</h1>
-          <p className={styles.subtitle}>Темы, предложенные научными руководителями</p>
+          <p className={styles.subtitle}>Темы, предложенные преподавателями</p>
         </div>
       </div>
 
@@ -243,14 +246,14 @@ export function TopicsPage(): ReactNode {
         </div>
       )}
 
-      {isStudent && myResponses.length > 0 && (
+      {isStudent && visibleMyResponses.length > 0 && (
         <section className={styles.myResponses}>
           <div className={styles.myResponsesHeader}>
             <h2>Мои отклики</h2>
-            <span>{myResponses.length}</span>
+            <span>{visibleMyResponses.length}</span>
           </div>
           <div className={styles.myResponseList}>
-            {myResponses.map((response) => (
+            {visibleMyResponses.map((response) => (
               <div key={response.id} className={styles.myResponseCard}>
                 <div>
                   <div className={styles.myResponseTitle}>{response.topic?.title ?? 'Тема'}</div>
@@ -511,7 +514,7 @@ export function TopicsPage(): ReactNode {
             <div className={styles.modalBody}>
               <div className={styles.modalTopicTitle}>{respondingTo.title}</div>
               {respondingTo.supervisor && (
-                <div className={styles.modalSupervisor}>Руководитель: {respondingTo.supervisor.fullName}</div>
+                <div className={styles.modalSupervisor}>Преподаватель: {respondingTo.supervisor.fullName}</div>
               )}
               <label className={styles.label} htmlFor="resp-msg">Сопроводительное сообщение</label>
               <textarea

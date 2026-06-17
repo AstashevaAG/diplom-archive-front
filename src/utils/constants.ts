@@ -1,28 +1,34 @@
 export const WORK_STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Черновик',
   TOPIC_SELECTED: 'Тема выбрана',
-  APPROVED: 'Утверждена',
-  IN_PROGRESS: 'В работе',
-  REVIEW: 'На рецензии',
-  DEFENSE: 'Защита',
-  PUBLISHED: 'Опубликована',
-  ARCHIVED: 'В архиве',
+  APPROVED: 'Тема утверждена',
+  IN_PROGRESS: 'Работа в процессе написания',
+  REVIEW: 'Финальная проверка',
+  NEEDS_REVISION: 'Требуются доработки',
+  DEFENSE: 'Допущена к защите',
+  PUBLISHED: 'Работа завершена',
+  ARCHIVED: 'Работа завершена',
 };
 
 export const ROLE_LABELS: Record<string, string> = {
   GUEST: 'Гость',
   STUDENT: 'Студент',
-  GRADUATE: 'Выпускник',
-  SUPERVISOR: 'Научный руководитель',
+  GRADUATE: 'Студент',
+  SUPERVISOR: 'Преподаватель',
   ADMIN: 'Администратор',
 };
 
 export const REVIEW_CRITERIA_DEFAULTS: Record<string, { label: string; weight: number }> = {
-  novelty: { label: 'Новизна и актуальность', weight: 0.2 },
-  methodology: { label: 'Качество методологии', weight: 0.25 },
-  practicalValue: { label: 'Практическая ценность', weight: 0.2 },
-  formatting: { label: 'Качество оформления', weight: 0.15 },
-  defense: { label: 'Защита и презентация', weight: 0.2 },
+  relevance: { label: 'Актуальность темы', weight: 1.5 },
+  novelty: { label: 'Научная новизна', weight: 2 },
+  theory: { label: 'Глубина теоретического анализа', weight: 1.5 },
+  methodology: { label: 'Корректность методологии', weight: 2 },
+  trainingPresentation: { label: 'Тренинговое выступление и контакт с аудиторией', weight: 1.5 },
+  structure: { label: 'Логика и структура изложения', weight: 1 },
+  formatting: { label: 'Качество оформления', weight: 0.5 },
+  independence: { label: 'Самостоятельность работы', weight: 1.5 },
+  practicalValue: { label: 'Практическая значимость', weight: 1 },
+  defense: { label: 'Качество защиты', weight: 1.5 },
 };
 
 export function formatDate(dateStr: string): string {

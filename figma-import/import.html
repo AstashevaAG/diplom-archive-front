@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Архив ВКР — Figma import</title>
+    <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
+
+      html,
+      body {
+        margin: 0;
+        background: #eef7fb;
+        font-family: Inter, Arial, sans-serif;
+      }
+
+      #figma-import-root {
+        width: 4000px;
+        height: 6400px;
+        background: #eef7fb;
+      }
+
+      object {
+        display: block;
+        width: 4000px;
+        height: 6400px;
+        border: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main id="figma-import-root">
+      <object data="./diplom-archive-design-import.svg" type="image/svg+xml"></object>
+    </main>
+  </body>
+</html>

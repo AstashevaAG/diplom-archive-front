@@ -1,5 +1,7 @@
 import { useState, useEffect, type ReactNode, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { StyledSelect } from '../../components/StyledSelect';
+import { useConfirmDialog } from '../../components/ConfirmDialog';
 import { useAuth } from '../../hooks';
 import { usersApi, portfolioApi } from '../../api';
 import { ROLE_LABELS } from '../../utils/constants';
@@ -73,16 +75,18 @@ function PortfolioForm({ onAdd }: PortfolioFormProps): ReactNode {
         </div>
         <div className={styles.fieldGroup}>
           <label className={styles.label} htmlFor="pf-type">Тип</label>
-          <select
+          <StyledSelect
             id="pf-type"
             className={styles.input}
             value={type}
-            onChange={(e) => setType(e.target.value as PortfolioItemType)}
-          >
-            {Object.values(PortfolioItemType).map((t) => (
-              <option key={t} value={t}>{PORTFOLIO_TYPE_LABELS[t]}</option>
-            ))}
-          </select>
+            onChange={(value) => {
+              setType(value as PortfolioItemType);
+            }}
+            options={Object.values(PortfolioItemType).map((t) => ({
+              value: t,
+              label: PORTFOLIO_TYPE_LABELS[t],
+            }))}
+          />
         </div>
       </div>
       <div className={styles.fieldGroup}>
@@ -135,9 +139,16 @@ interface PortfolioItemCardProps {
 
 function PortfolioItemCard({ item, onDelete }: PortfolioItemCardProps): ReactNode {
   const [deleting, setDeleting] = useState(false);
+  const { requestConfirmation } = useConfirmDialog();
 
   const handleDelete = async (): Promise<void> => {
-    if (!confirm('Удалить эту работу из портфолио?')) return;
+    const confirmed = await requestConfirmation({
+      title: 'Удалить работу из портфолио?',
+      message: 'Запись исчезнет из вашего портфолио. Это действие нельзя отменить.',
+      confirmLabel: 'Удалить',
+      variant: 'danger',
+    });
+    if (!confirmed) return;
     setDeleting(true);
     try {
       await portfolioApi.delete(item.id);

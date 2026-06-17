@@ -2,8 +2,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: calc(100vh - var(--header-height) - 120px);
-  padding: 2rem;
+  width: 100%;
+  max-width: none;
+  min-height: calc(100vh - var(--header-height) - 81px);
+  min-height: calc(100dvh - var(--header-height) - 81px);
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  box-sizing: border-box;
+}
+
+.authPage {
+  width: 100%;
 }
 
 .card {
@@ -101,21 +110,11 @@
   outline: none;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%2214%22%20height%3D%2214%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2371717A%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%209l6%206%206-6%22/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  padding-right: 2.5rem;
 }
 
 .select:focus {
   border-color: var(--accent);
   box-shadow: var(--shadow-focus);
-}
-
-.select option {
-  background: var(--bg-elevated);
-  color: var(--text-primary);
 }
 
 /* ===== Submit ===== */

@@ -1,5 +1,6 @@
 import { useState, type ReactNode, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { StyledSelect } from '../../components/StyledSelect';
 import { useAuth } from '../../hooks';
 import { Role, type RegisterData } from '../../types';
 import { AxiosError } from 'axios';
@@ -58,7 +59,7 @@ export function RegisterPage(): ReactNode {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.authPage}`}>
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.iconWrap}>
@@ -120,15 +121,18 @@ export function RegisterPage(): ReactNode {
           <div className={styles.row}>
             <div className={styles.fieldGroup}>
               <label className={styles.label} htmlFor="reg-role">Роль</label>
-              <select
+              <StyledSelect
                 id="reg-role"
                 className={styles.select}
                 value={formData.role}
-                onChange={(e) => updateField('role', e.target.value as Role)}
-              >
-                <option value={Role.STUDENT}>Студент</option>
-                <option value={Role.SUPERVISOR}>Руководитель</option>
-              </select>
+                onChange={(value) => {
+                  updateField('role', value as Role);
+                }}
+                options={[
+                  { value: Role.STUDENT, label: 'Студент' },
+                  { value: Role.SUPERVISOR, label: 'Преподаватель' },
+                ]}
+              />
             </div>
 
             {formData.role === Role.STUDENT && (

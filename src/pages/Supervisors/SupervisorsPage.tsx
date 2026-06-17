@@ -137,7 +137,7 @@ function SuccessBanner({ supervisorName, onClose }: SuccessBannerProps): ReactNo
         </div>
         <div className={styles.modalBody}>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', lineHeight: 1.6 }}>
-            Ваша заявка успешно направлена руководителю <strong>{supervisorName}</strong>.
+            Ваша заявка успешно направлена преподавателю <strong>{supervisorName}</strong>.
             Вы получите уведомление, когда он рассмотрит её. Следить за статусом можно в{' '}
             <Link to="/dashboard" style={{ color: 'var(--accent)' }} onClick={onClose}>
               личном кабинете
@@ -179,14 +179,14 @@ export function SupervisorsPage(): ReactNode {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Научные руководители</h1>
+        <h1 className={styles.title}>Преподаватели</h1>
         <p className={styles.subtitle}>Преподаватели кафедры психологии</p>
       </div>
 
       {isLoading ? (
         <div className={styles.empty}>Загрузка...</div>
       ) : supervisors.length === 0 ? (
-        <div className={styles.empty}>Руководители не найдены</div>
+        <div className={styles.empty}>Преподаватели не найдены</div>
       ) : (
         <div className={styles.grid}>
           {supervisors.map((sup) => (

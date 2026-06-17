@@ -3,7 +3,6 @@
 export const Role = {
   GUEST: 'GUEST',
   STUDENT: 'STUDENT',
-  GRADUATE: 'GRADUATE',
   SUPERVISOR: 'SUPERVISOR',
   ADMIN: 'ADMIN',
 } as const;
@@ -15,6 +14,7 @@ export const WorkStatus = {
   APPROVED: 'APPROVED',
   IN_PROGRESS: 'IN_PROGRESS',
   REVIEW: 'REVIEW',
+  NEEDS_REVISION: 'NEEDS_REVISION',
   DEFENSE: 'DEFENSE',
   PUBLISHED: 'PUBLISHED',
   ARCHIVED: 'ARCHIVED',
@@ -168,7 +168,7 @@ export interface CreateWorkData {
   category?: string;
   tags?: string[];
   year?: number;
-  supervisorId?: string;
+  supervisorId: string;
 }
 
 export interface UpdateWorkData {
@@ -416,6 +416,7 @@ export interface TopicResponse {
     portfolioItems?: { id: string; title: string; type: PortfolioItemType; year: number | null; grade: string | null }[];
   };
   topic?: SupervisorTopic;
+  work?: { id: string; title: string };
   messages?: TopicResponseMessage[];
 }
 
@@ -475,6 +476,14 @@ export interface DashboardData {
   totalWorks: number;
   totalUsers: number;
   totalSupervisors: number;
+  studentsWithoutWorks: number;
   avgQualityScore: number;
   recentWorks: number;
+  statusRows: { status: WorkStatus; count: number }[];
+  studentsWithoutWorkRows: Array<{
+    id: string;
+    fullName: string;
+    email: string;
+    group: string | null;
+  }>;
 }

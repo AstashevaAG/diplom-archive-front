@@ -1,5 +1,6 @@
 import { useState, useEffect, type ReactNode, type SyntheticEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
+import { StyledSelect } from '../../components/StyledSelect';
 import { useAuth } from '../../hooks';
 import { worksApi, topicRequestsApi, supervisorTopicsApi, usersApi, portfolioApi, usersApi as _usersApi } from '../../api';
 import {
@@ -97,7 +98,7 @@ function StudentRequestsTab(): ReactNode {
       {requests.length === 0 ? (
         <div className={styles.empty}>
           <div className={styles.emptyText}>Вы ещё не подавали заявки</div>
-          <Link to="/supervisors" className={styles.addBtn}>Выбрать руководителя</Link>
+          <Link to="/supervisors" className={styles.addBtn}>Выбрать преподавателя</Link>
         </div>
       ) : (
         <div className={styles.requestList}>
@@ -356,7 +357,7 @@ function MessagesTab(): ReactNode {
                 </div>
                 {otherPerson && (
                   <div className={styles.requestMeta}>
-                    {isSupervisor ? 'Студент' : 'Руководитель'}: {otherPerson.fullName}
+                    {isSupervisor ? 'Студент' : 'Преподаватель'}: {otherPerson.fullName}
                   </div>
                 )}
                 <div className={styles.requestDate} style={{ marginTop: '0.5rem', color: 'var(--accent)', fontSize: '0.75rem' }}>
@@ -471,6 +472,7 @@ function SupervisorTopicsTab(): ReactNode {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [topicResponses, setTopicResponses] = useState<Record<string, TopicResponse[]>>({});
   const [discussion, setDiscussion] = useState<{ topicId: string; response: TopicResponse } | null>(null);
+  const [showOccupiedTopics, setShowOccupiedTopics] = useState(false);
 
   useEffect(() => {
     void supervisorTopicsApi.getMy().then(setTopics).catch(() => {}).finally(() => setIsLoading(false));
@@ -498,7 +500,18 @@ function SupervisorTopicsTab(): ReactNode {
 
   const handleAccept = async (topicId: string, responseId: string): Promise<void> => {
     await supervisorTopicsApi.acceptResponse(topicId, responseId);
-    setTopicResponses((prev) => ({ ...prev, [topicId]: (prev[topicId] ?? []).map((r) => r.id === responseId ? { ...r, status: TopicResponseStatus.ACCEPTED } : r) }));
+    setTopics((prev) => prev.map((topic) => topic.id === topicId ? { ...topic, isActive: false } : topic));
+    setTopicResponses((prev) => ({
+      ...prev,
+      [topicId]: (prev[topicId] ?? []).map((r) =>
+        r.id === responseId
+          ? { ...r, status: TopicResponseStatus.ACCEPTED }
+          : r.status === TopicResponseStatus.PENDING
+            ? { ...r, status: TopicResponseStatus.REJECTED }
+            : r,
+      ),
+    }));
+    setExpandedId(null);
   };
 
   const handleReject = async (topicId: string, responseId: string): Promise<void> => {
@@ -507,6 +520,61 @@ function SupervisorTopicsTab(): ReactNode {
   };
 
   if (isLoading) return <div className={styles.empty}>Загрузка...</div>;
+
+  const activeTopics = topics.filter((topic) => topic.isActive);
+  const occupiedTopics = topics.filter((topic) => !topic.isActive);
+
+  const renderTopicCard = (topic: SupervisorTopic): ReactNode => (
+    <div key={topic.id} className={`${styles.requestCard} ${!topic.isActive ? styles.requestCardProcessed : ''}`}>
+      <div className={styles.requestTop}>
+        <div className={styles.requestTopic}>{topic.title}</div>
+        <span className={`${styles.requestStatus} ${topic.isActive ? styles.statusApproved : styles.statusRejected}`}>{topic.isActive ? 'Активна' : 'Занята'}</span>
+      </div>
+      {topic.area && <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginBottom: '0.25rem' }}>{topic.area}</div>}
+      {topic.description && <div className={styles.requestJustification}>{topic.description}</div>}
+      <button type="button" className={styles.btnGhost} style={{ marginTop: '0.75rem', fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}
+        onClick={() => void loadResponses(topic.id)}>
+        Отклики {topic._count ? `(${topic._count.responses})` : ''}
+      </button>
+      {expandedId === topic.id && topicResponses[topic.id] && (
+        <div style={{ marginTop: '0.875rem', borderTop: '1px solid var(--border)', paddingTop: '0.875rem' }}>
+          {(topicResponses[topic.id] ?? []).length === 0 ? (
+            <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Откликов пока нет</div>
+          ) : (
+            topicResponses[topic.id]?.map((resp) => (
+              <div key={resp.id} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <strong style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{resp.student?.fullName}</strong>
+                  <span style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: 'var(--radius-sm)', background: resp.status === TopicResponseStatus.ACCEPTED ? 'var(--success-muted)' : resp.status === TopicResponseStatus.REJECTED ? 'var(--danger-muted)' : 'var(--accent-muted)', color: resp.status === TopicResponseStatus.ACCEPTED ? 'var(--success)' : resp.status === TopicResponseStatus.REJECTED ? '#FCA5A5' : 'var(--accent)' }}>
+                    {resp.status === TopicResponseStatus.ACCEPTED ? 'Принят' : resp.status === TopicResponseStatus.REJECTED ? 'Отклонён' : 'Ожидает'}
+                  </span>
+                </div>
+                {resp.student?.group && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{resp.student.group}</div>}
+                {resp.message && <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '0.25rem' }}>{resp.message}</div>}
+                {resp.messages?.[0] && (
+                  <div className={styles.lastMessage}>
+                    <span>{resp.messages[0].author.fullName}:</span> {resp.messages[0].text}
+                  </div>
+                )}
+                {topic.isActive && resp.status === TopicResponseStatus.PENDING && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                    <button type="button" className={styles.btnGhost} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setDiscussion({ topicId: topic.id, response: resp })}>Обсудить</button>
+                    <button type="button" className={styles.btnApprove} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => void handleAccept(topic.id, resp.id)}>Принять</button>
+                    <button type="button" className={styles.btnReject} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => void handleReject(topic.id, resp.id)}>Отклонить</button>
+                  </div>
+                )}
+                {(!topic.isActive || resp.status !== TopicResponseStatus.PENDING) && (
+                  <button type="button" className={styles.btnGhost} style={{ marginTop: '0.5rem', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setDiscussion({ topicId: topic.id, response: resp })}>
+                    История обсуждения
+                  </button>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div>
@@ -536,59 +604,31 @@ function SupervisorTopicsTab(): ReactNode {
       {topics.length === 0 ? (
         <div className={styles.empty}><div className={styles.emptyText}>Вы ещё не предлагали темы</div></div>
       ) : (
-        <div className={styles.requestList}>
-          {topics.map((topic) => (
-            <div key={topic.id} className={styles.requestCard}>
-              <div className={styles.requestTop}>
-                <div className={styles.requestTopic}>{topic.title}</div>
-                <span className={`${styles.requestStatus} ${topic.isActive ? styles.statusApproved : styles.statusRejected}`}>{topic.isActive ? 'Активна' : 'Закрыта'}</span>
-              </div>
-              {topic.area && <div style={{ fontSize: '0.75rem', color: 'var(--accent)', marginBottom: '0.25rem' }}>{topic.area}</div>}
-              {topic.description && <div className={styles.requestJustification}>{topic.description}</div>}
-              <button type="button" className={styles.btnGhost} style={{ marginTop: '0.75rem', fontSize: '0.75rem', padding: '0.25rem 0.75rem' }}
-                onClick={() => void loadResponses(topic.id)}>
-                Отклики {topic._count ? `(${topic._count.responses})` : ''}
+        <>
+          {activeTopics.length === 0 ? (
+            <div className={styles.empty}><div className={styles.emptyText}>Активных тем сейчас нет</div></div>
+          ) : (
+            <div className={styles.requestList}>
+              {activeTopics.map(renderTopicCard)}
+            </div>
+          )}
+          {occupiedTopics.length > 0 && (
+            <div className={styles.occupiedTopicsBlock}>
+              <button
+                type="button"
+                className={styles.btnGhost}
+                onClick={() => setShowOccupiedTopics((v) => !v)}
+              >
+                {showOccupiedTopics ? 'Скрыть занятые темы' : `Показать занятые темы (${occupiedTopics.length})`}
               </button>
-              {expandedId === topic.id && topicResponses[topic.id] && (
-                <div style={{ marginTop: '0.875rem', borderTop: '1px solid var(--border)', paddingTop: '0.875rem' }}>
-                  {(topicResponses[topic.id] ?? []).length === 0 ? (
-                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Откликов пока нет</div>
-                  ) : (
-                    topicResponses[topic.id]?.map((resp) => (
-                      <div key={resp.id} style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '0.75rem', marginBottom: '0.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                          <strong style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{resp.student?.fullName}</strong>
-                          <span style={{ fontSize: '0.6875rem', padding: '0.125rem 0.375rem', borderRadius: 'var(--radius-sm)', background: resp.status === TopicResponseStatus.ACCEPTED ? 'var(--success-muted)' : resp.status === TopicResponseStatus.REJECTED ? 'var(--danger-muted)' : 'var(--accent-muted)', color: resp.status === TopicResponseStatus.ACCEPTED ? 'var(--success)' : resp.status === TopicResponseStatus.REJECTED ? '#FCA5A5' : 'var(--accent)' }}>
-                            {resp.status === TopicResponseStatus.ACCEPTED ? 'Принят' : resp.status === TopicResponseStatus.REJECTED ? 'Отклонён' : 'Ожидает'}
-                          </span>
-                        </div>
-                        {resp.student?.group && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{resp.student.group}</div>}
-                        {resp.message && <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '0.25rem' }}>{resp.message}</div>}
-                        {resp.messages?.[0] && (
-                          <div className={styles.lastMessage}>
-                            <span>{resp.messages[0].author.fullName}:</span> {resp.messages[0].text}
-                          </div>
-                        )}
-                        {resp.status === TopicResponseStatus.PENDING && (
-                          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                            <button type="button" className={styles.btnGhost} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setDiscussion({ topicId: topic.id, response: resp })}>Обсудить</button>
-                            <button type="button" className={styles.btnApprove} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => void handleAccept(topic.id, resp.id)}>Принять</button>
-                            <button type="button" className={styles.btnReject} style={{ padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => void handleReject(topic.id, resp.id)}>Отклонить</button>
-                          </div>
-                        )}
-                        {resp.status !== TopicResponseStatus.PENDING && (
-                          <button type="button" className={styles.btnGhost} style={{ marginTop: '0.5rem', padding: '0.25rem 0.75rem', fontSize: '0.75rem' }} onClick={() => setDiscussion({ topicId: topic.id, response: resp })}>
-                            История обсуждения
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
+              {showOccupiedTopics && (
+                <div className={styles.requestList} style={{ marginTop: '0.75rem' }}>
+                  {occupiedTopics.map(renderTopicCard)}
                 </div>
               )}
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
       {discussion && (
         <ResponseDiscussion
@@ -708,10 +748,15 @@ function ProfileTab(): ReactNode {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
               <input type="text" placeholder="Название *" value={pfTitle} onChange={(e) => setPfTitle(e.target.value)} required
                 style={{ padding: '0.625rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }} />
-              <select value={pfType} onChange={(e) => setPfType(e.target.value as PortfolioItemType)}
-                style={{ padding: '0.625rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.875rem', outline: 'none' }}>
-                {Object.values(PortfolioItemType).map((t) => <option key={t} value={t}>{PORTFOLIO_TYPE_LABELS[t]}</option>)}
-              </select>
+              <StyledSelect
+                value={pfType}
+                onChange={(value) => {
+                  setPfType(value as PortfolioItemType);
+                }}
+                options={Object.values(PortfolioItemType).map((t) => ({ value: t, label: PORTFOLIO_TYPE_LABELS[t] }))}
+                ariaLabel="Тип работы"
+                style={{ background: 'var(--bg-primary)', borderColor: 'var(--border)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+              />
             </div>
             <textarea placeholder="Описание (необязательно)" value={pfDesc} onChange={(e) => setPfDesc(e.target.value)}
               style={{ padding: '0.625rem 0.75rem', background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', color: 'var(--text-primary)', fontSize: '0.875rem', minHeight: '60px', resize: 'vertical', fontFamily: 'inherit', outline: 'none' }} />
@@ -759,21 +804,28 @@ export function DashboardPage(): ReactNode {
   const { user, hasRole } = useAuth();
   const isSupervisor = hasRole(Role.SUPERVISOR);
   const isStudent = hasRole(Role.STUDENT);
+  const isAdmin = hasRole(Role.ADMIN);
   const [activeTab, setActiveTab] = useState<TabKey>('works');
 
+  useEffect(() => {
+    if (isAdmin && activeTab !== 'profile') {
+      setActiveTab('profile');
+    }
+  }, [activeTab, isAdmin]);
+
   const tabs: { key: TabKey; label: string; show: boolean }[] = [
-    { key: 'works', label: isSupervisor ? 'Мои студенты' : 'Работы', show: true },
+    { key: 'works', label: isSupervisor ? 'Мои студенты' : 'Работы', show: !isAdmin },
     { key: 'requests', label: 'Заявки', show: isStudent },
     { key: 'inbox', label: 'Входящие', show: isSupervisor },
     { key: 'my-topics', label: 'Мои темы', show: isSupervisor },
-    { key: 'messages', label: 'Сообщения', show: true },
+    { key: 'messages', label: 'Сообщения', show: !isAdmin },
     { key: 'profile', label: 'Профиль', show: true },
   ];
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>{isSupervisor ? 'Кабинет руководителя' : 'Личный кабинет'}</h1>
+        <h1 className={styles.title}>{isSupervisor ? 'Кабинет преподавателя' : 'Личный кабинет'}</h1>
         {user && (
           <div className={styles.userChip}>
             <div className={styles.userChipAvatar}>{user.fullName.charAt(0).toUpperCase()}</div>

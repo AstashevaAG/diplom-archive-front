@@ -228,10 +228,12 @@
 
 /* ===== Highlight ===== */
 .highlight {
-  background-color: var(--accent-muted);
+  background-color: rgba(255, 214, 102, 0.68);
   color: var(--text-primary);
   padding: 0 2px;
   border-radius: 2px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
 /* ===== Filters ===== */

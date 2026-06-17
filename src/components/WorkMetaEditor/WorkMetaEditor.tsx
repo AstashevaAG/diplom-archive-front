@@ -75,7 +75,9 @@ export function WorkMetaEditor({
     setUploadingFinal(true);
     setError('');
     try {
-      const uploaded = await filesApi.upload(work.id, file, 'Итоговый файл ВКР');
+      const uploaded = await filesApi.upload(work.id, file, 'Итоговый файл ВКР', {
+        indexForSearch: true,
+      });
       onFileUploaded?.(uploaded);
     } catch {
       setError('Не удалось загрузить итоговый файл');

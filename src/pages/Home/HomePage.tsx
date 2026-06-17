@@ -16,8 +16,8 @@ export function HomePage(): ReactNode {
           Архив <span className={styles.heroHighlight}>дипломных работ</span>
         </h1>
         <p className={styles.heroSub}>
-          Цифровая платформа для систематизации, хранения и полнотекстового
-          поиска выпускных квалификационных работ
+          Цифровая платформа для систематизации, хранения и поиска дипломных
+          работ
         </p>
         <div className={styles.heroActions}>
           <Link to="/catalog" className={styles.heroBtnPrimary}>
@@ -41,7 +41,7 @@ export function HomePage(): ReactNode {
         </div>
         <div className={styles.statItem}>
           <div className={styles.statValue}>50+</div>
-          <div className={styles.statLabel}>руководителей</div>
+          <div className={styles.statLabel}>преподавателей</div>
         </div>
         <div className={styles.statItem}>
           <div className={styles.statValue}>98%</div>
@@ -57,7 +57,7 @@ export function HomePage(): ReactNode {
       <section className={styles.featuresSection}>
         <div className={styles.featuresHeader}>
           <div className={styles.featuresLabel}>Возможности</div>
-          <h2 className={styles.featuresTitle}>Всё для работы с ВКР</h2>
+          <h2 className={styles.featuresTitle}>Всё для работы с дипломом</h2>
         </div>
 
         <div className={styles.features}>
@@ -85,7 +85,7 @@ export function HomePage(): ReactNode {
             <h3 className={styles.featureTitle}>Аналитика трендов</h3>
             <p className={styles.featureDesc}>
               Визуализация тематических трендов по годам, распределение оценок
-              и статистика руководителей.
+              и статистика преподавателей.
             </p>
           </div>
 
@@ -112,10 +112,10 @@ export function HomePage(): ReactNode {
                 <path d="M16 17H8" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>Парсинг PDF</h3>
+            <h3 className={styles.featureTitle}>Информационный центр</h3>
             <p className={styles.featureDesc}>
-              Автоматическое извлечение текста из PDF-файлов для мгновенной
-              индексации и поиска.
+              Полезные статьи, памятки и инструкции по подготовке диплома,
+              поиску работ и взаимодействию с преподавателем.
             </p>
           </div>
 
@@ -142,9 +142,9 @@ export function HomePage(): ReactNode {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
             </div>
-            <h3 className={styles.featureTitle}>Каталог руководителей</h3>
+            <h3 className={styles.featureTitle}>Каталог преподавателей</h3>
             <p className={styles.featureDesc}>
-              Выбор научного руководителя с информацией о специализации и
+              Выбор преподавателя с информацией о специализации и
               количестве работ.
             </p>
           </div>

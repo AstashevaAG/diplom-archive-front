@@ -37,7 +37,7 @@ export function LoginPage(): ReactNode {
   };
 
   return (
-    <div className={styles.page}>
+    <div className={`${styles.page} ${styles.authPage}`}>
       <div className={styles.card}>
         <div className={styles.header}>
           <div className={styles.iconWrap}>

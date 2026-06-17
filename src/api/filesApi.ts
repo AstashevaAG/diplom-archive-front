@@ -1,12 +1,19 @@
 import api from './axiosInstance';
 import type { FileVersionCompareResult, WorkFile } from '../types';
 
+interface UploadFileOptions {
+  indexForSearch?: boolean;
+}
+
 export const filesApi = {
-  upload: (workId: string, file: File, comment?: string) => {
+  upload: (workId: string, file: File, comment?: string, options?: UploadFileOptions) => {
     const formData = new FormData();
     formData.append('file', file);
     if (comment?.trim()) {
       formData.append('comment', comment.trim());
+    }
+    if (options?.indexForSearch) {
+      formData.append('indexForSearch', 'true');
     }
     return api
       .post<WorkFile>(`/files/works/${workId}`, formData, {

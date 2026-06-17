@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks';
 import { FilePreviewModal } from '../../components/FilePreviewModal/FilePreviewModal';
 import { WorkMetaEditor } from '../../components/WorkMetaEditor/WorkMetaEditor';
 import { Role, WorkStatus, type Work, type WorkFile, type Comment, type WorkStage, type Review, type ReviewCriteriaConfig } from '../../types';
-import { WORK_STATUS_LABELS, formatDateTime } from '../../utils/constants';
+import { WORK_STATUS_LABELS, formatDate, formatDateTime } from '../../utils/constants';
 import styles from './WorkDetailPage.module.css';
 
 function FileIcon({ type }: { type: string }): ReactNode {
@@ -59,11 +59,40 @@ function formatBytes(size?: number): string {
   return `${(size / 1024 / 1024).toFixed(1)} МБ`;
 }
 
+function getFileFormat(file: WorkFile): string {
+  const ext = file.originalName.split('.').pop()?.trim();
+  if (ext && ext.length <= 6 && ext !== file.originalName) {
+    return ext.toUpperCase();
+  }
+
+  if (file.type === 'PRESENTATION') return 'PPTX';
+  if (file.type === 'VIDEO') return 'MP4';
+  if (file.type === 'PDF') return 'PDF';
+  return 'FILE';
+}
+
 function sortFileVersions(files?: WorkFile[]): WorkFile[] {
   return [...(files ?? [])].sort((a, b) => {
     const byVersion = (b.version ?? 0) - (a.version ?? 0);
     if (byVersion !== 0) return byVersion;
     return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime();
+  });
+}
+
+function getFinalWorkFiles(files?: WorkFile[]): WorkFile[] {
+  const latestByType = new Map<string, WorkFile>();
+
+  for (const file of sortFileVersions(files)) {
+    if (!latestByType.has(file.type)) {
+      latestByType.set(file.type, file);
+    }
+  }
+
+  const typeOrder = ['PDF', 'PRESENTATION', 'VIDEO', 'OTHER'];
+  return [...latestByType.values()].sort((a, b) => {
+    const byType = typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type);
+    if (byType !== 0) return byType;
+    return a.originalName.localeCompare(b.originalName, 'ru');
   });
 }
 
@@ -592,11 +621,12 @@ export function WorkDetailPage(): ReactNode {
   }
 
   const isPublished = work.status === WorkStatus.PUBLISHED;
+  const showsFinalFilesOnly = work.status === WorkStatus.PUBLISHED || work.status === WorkStatus.ARCHIVED;
   const isParticipant =
     isAuthenticated &&
     user !== null &&
     (user.id === work.authorId || user.id === work.supervisorId);
-  const fileVersions = sortFileVersions(work.files);
+  const displayedFiles = showsFinalFilesOnly ? getFinalWorkFiles(work.files) : sortFileVersions(work.files);
   const canEditWorkInfo =
     isAuthenticated &&
     user !== null &&
@@ -755,11 +785,11 @@ export function WorkDetailPage(): ReactNode {
       {/* Files */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          Версии файлов ({String(fileVersions.length)})
+          Файлы работы ({String(displayedFiles.length)})
         </h2>
-        {fileVersions.length > 0 ? (
+        {displayedFiles.length > 0 ? (
           <div className={styles.filesList}>
-            {fileVersions.map((file) => (
+            {displayedFiles.map((file) => (
               <button
                 key={file.id}
                 type="button"
@@ -772,15 +802,15 @@ export function WorkDetailPage(): ReactNode {
                 </span>
                 <div className={styles.fileInfo}>
                   <div className={styles.fileName}>
-                    v{String(file.version ?? 1)} · {file.originalName}
+                    {file.originalName}
                   </div>
                   <span className={styles.fileVersionMeta}>
-                    {file.createdAt ? formatDateTime(file.createdAt) : 'дата не указана'} · {formatBytes(file.size)}
+                    {file.createdAt ? formatDate(file.createdAt) : 'дата не указана'} · {formatBytes(file.size)}
                   </span>
                   {file.comment && (
                     <span className={styles.fileVersionComment}>{file.comment}</span>
                   )}
-                  <span className={styles.fileTypeBadge}>{file.type}</span>
+                  <span className={styles.fileTypeBadge}>{getFileFormat(file)}</span>
                 </div>
                 <span className={styles.fileAction}>
                   <span className={styles.fileActionText}>Просмотр</span>
