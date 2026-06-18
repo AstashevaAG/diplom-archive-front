@@ -85,7 +85,7 @@ html {
   background: #F4FAFD;
   color: var(--text-primary);
   tab-size: 4;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -93,13 +93,13 @@ body {
   min-height: 100dvh;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(244, 250, 253, 0.96) 18rem, var(--bg-primary) 100%);
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 #root {
   min-height: 100vh;
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 a {
